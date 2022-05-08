@@ -1,37 +1,79 @@
-//const d3 = require('d3')
+const d3 = require('d3')
 
-export default function BuildMap(data, {
-    width = 600,
-    height = 450,
-    path,
-    backgroundColor = "white",
-    stroke = "black",
-    strokeLinecap = "round",
-    strokeLinejoin = "round",
+export default function BuildMap() {
 
-}) {
+    let topology;
 
     function me(selection) {
+        //console.log(selection.datum())
 
-        const svg = selection.append("svg")
-            .attr("width", width)
-            .attr("height", height)
-            .attr("viewBox", [0, 0, width, height])
-            .attr("pointer-events", "none")
-            .attr("fill", "none")
+        const backgroundColor = "white";
+        const stroke ="black";
+        const strokeLinecap = "round";
+        const strokeLinejoin = "round";
+
+        const boundaries = selection.node().parentNode.getBoundingClientRect();
+        const projection = d3.geoMercator()
+            .fitSize(
+                [boundaries.width, boundaries.height],
+                topology
+            )
+
+        const path = d3.geoPath().projection(projection)
+
+        const svg = d3.select(selection.node().parentNode)
+
+        svg
             .attr("stroke", stroke)
             .attr("stroke-linecap", strokeLinecap)
-            .attr("stroke-linejoin", strokeLinejoin);
+            .attr("stroke-linejoin", strokeLinejoin)
+            .attr("fill", "none")
+            .attr("background-color", backgroundColor)
 
-        svg.append("g")
-            .selectAll("path")
-            .data(data.features)
+        selection.selectAll("path")
+            .data(selection.datum().features)
             .join("path")
-                .attr("fill", backgroundColor)
+                .attr("fill", "cyan")
                 .attr("d", path)
-                
-            
 
+        
+    }    
+
+
+
+                
+        /*
+        svg.selectAll("d")
+                .data(topology.features)
+                .join("text")
+                .attr("class", "loc-label")
+                .attr("transform", (d) => {
+                    if (d.geometry != null) {
+                        return "translate(" + projection(d.geometry.coordinates[0]) + ")"
+                    } else {
+                        return null
+                    }
+                })
+                .text((d) => {
+                    
+                    if (d.geometry != null) {
+
+                        const label = d.properties.FETYPE + " " + d.properties.FENAME
+                        const labelsHidden = ["St","Rd","Ave","Way"]
+
+                        return !labelsHidden.includes(d.properties.FETYPE) ? label : null
+                    } 
+                    return null
+                })
+                .attr("stroke","none")
+                .attr("fill","black")
+                .attr("style","font-size:15px")
+            
+        */
+       
+
+    me.addTopology = function(top) {
+        topology = top
     }
 
     return me;
