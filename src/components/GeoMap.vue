@@ -1,5 +1,5 @@
 <template>
-    <svg style="width:700; height:500" viewbox="[0, 0, width, height]">
+    <svg id="mapsvg" style="width:950; height:700" viewbox="[0, 0, width, height]">
         <g class="world" ref="world"></g>
         <g class="features" ref="features"></g>
     </svg>
@@ -53,8 +53,6 @@ export default {
                 const topology = topojson.feature(json, json.objects[featureName])
                 map.addTopology(topology)
 
-                console.log(topology)
-
                 gWorld.datum(topology).call(map)
 
                })
@@ -66,7 +64,6 @@ export default {
     watch: {
         featureCollection(features) {
             const gFeatures = d3.select(this.$refs.features)
-            console.log({...features.features})
             gFeatures.datum(features)
                 .call(map)
         },
@@ -77,7 +74,24 @@ export default {
 
 </script>
 
-<style scoped>
+<style>
 
+#mapsvg {
+    background-color: rgb(252, 248, 245);
+}
 
+g.world path {
+    stroke: rgb(84, 83, 83);
+    stroke-linecap:round;
+    stroke-linejoin: round;
+    fill: none;
+    
+}
+
+g.features path {
+    stroke-width: 0.3px;
+    stroke-opacity: 20%;
+    fill: rgb(248, 217, 178);
+    stroke: black;
+}
 </style>

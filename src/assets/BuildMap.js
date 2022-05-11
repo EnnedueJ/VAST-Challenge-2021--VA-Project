@@ -7,11 +7,6 @@ export default function BuildMap() {
     function me(selection) {
         //console.log(selection.datum())
 
-        const backgroundColor = "white";
-        const stroke ="black";
-        const strokeLinecap = "round";
-        const strokeLinejoin = "round";
-
         const boundaries = selection.node().parentNode.getBoundingClientRect();
         const projection = d3.geoMercator()
             .fitSize(
@@ -20,21 +15,14 @@ export default function BuildMap() {
             )
 
         const path = d3.geoPath().projection(projection)
-
-        const svg = d3.select(selection.node().parentNode)
-
-        svg
-            .attr("stroke", stroke)
-            .attr("stroke-linecap", strokeLinecap)
-            .attr("stroke-linejoin", strokeLinejoin)
-            .attr("fill", "none")
-            .attr("background-color", backgroundColor)
+        
+        path.pointRadius(3)
 
         selection.selectAll("path")
             .data(selection.datum().features)
             .join("path")
-                .attr("fill", "cyan")
                 .attr("d", path)
+
 
         
     }    
