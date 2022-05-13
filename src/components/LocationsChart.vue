@@ -6,7 +6,7 @@
 const Plotly = require("plotly.js/dist/plotly-basic");
 
 export default {
-    name: "PlotlyChart",
+    name: "LocationsChart",
     props: {
         popsAggr: Array,
     },
@@ -14,7 +14,15 @@ export default {
         return {
             data : [{
                 type: "bar",
-                orientation: 'h'
+                orientation: 'h',
+                marker: {
+                    color: 'rgb(158,202,225)',
+                    opacity: 0.6,
+                    line: {
+                        color: 'rgb(8,48,107)',
+                        width: 1.5
+                    }
+                },
             }],
             layout: {
                 height: 650,
@@ -22,7 +30,7 @@ export default {
                 margin: {
                     t:0,
                     b:20,
-                    r:20,
+                    r:0,
                     l:170
                 },
                 font: {
@@ -30,7 +38,8 @@ export default {
                 },
                 xaxis: {
                     zeroline: false
-                }
+                },
+                
             },
             options: {
                 displayModeBar: false,
@@ -44,7 +53,6 @@ export default {
         popsAggr(datum) {
             this.data[0].y = datum.map(d => d.key);
             this.data[0].x = datum.map(d => d.value);
-            console.log(this.data)
             Plotly.newPlot("plot", this.data, this.layout)
         },
         deep : true
@@ -52,6 +60,11 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
+
+#plot {
+    display: flex;
+    justify-content: right;
+}
 
 </style>

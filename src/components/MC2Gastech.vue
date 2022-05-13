@@ -8,7 +8,7 @@
             <b-col class="plots">
                 <b-row id="titles">
                     <h4>Popular locations</h4>
-                    <h7>Most popular location by number of visitors.</h7>
+                    <!--<h7>Most popular location by number of visitors.</h7>-->
                 </b-row>
                 <b-row>
                     <b-form-checkbox-group button-variant="outline-secondary"
@@ -21,13 +21,26 @@
                     </b-form-checkbox-group>
                 </b-row>
                 <b-row>
-                    
-                    <PlotlyChart :popsAggr="dataLocations"/>
+                    <LocationsChart :popsAggr="dataLocations"/>
                 </b-row>
             </b-col>
             <b-col class="map">
                 <h4>Map</h4>
                 <GeoMap :featureCollection="pointCollection"/>
+            </b-col>
+            <b-col>
+                <h4>Persons</h4>
+                <b-list-group class="persons-list">
+                    <b-list-group-item class="flex justify-content-between"  v-for="p in persons" :key="p.id">
+                        {{p.name}}
+                        <b-badge variant="light" pill 
+                            style="margin-left:20px; padding-left: 15px;">
+                            {{p.id != 0 ? p.id : "f"}}
+                        </b-badge>
+                        <br/>
+                        <small style="font-style: italic;">{{p.employment}}</small>
+                    </b-list-group-item>
+                </b-list-group>
             </b-col>
             
         </b-row>
@@ -43,7 +56,7 @@ const crossfilter = require("crossfilter");
 const d3 = require("d3");
 
 import GeoMap from "./GeoMap.vue";
-import PlotlyChart from "./PlotlyChart.vue"
+import LocationsChart from "./LocationsChart.vue"
 
 let cardsCf;
 let dim;
@@ -52,11 +65,12 @@ export default {
     name : "MC2Gastech",
     components: {
     GeoMap,
-    PlotlyChart
+    LocationsChart
 },
 
     data() {
         return {
+            persons: [],
             pointCollection: {
                 type: 'FeatureCollection',
                 features: [
@@ -74,8 +88,8 @@ export default {
             },
             dataLocations: [],
             cardType: {
-                value: "All",
-                options: ["All","Credit Card","Loyalty Card"]
+                value: "Total",
+                options: ["Total","Credit Card","Loyalty Card"]
                 }
         }
     },
@@ -92,7 +106,7 @@ export default {
                 const cf = crossfilter(res);
                 const gps = cf.dimension(d => d.id);
                 const filter = gps.filter(1).top(Infinity);
-                const features = this.csvToGeoJson(filter);
+                const features = this.listToGeoJson(filter);
                 this.pointCollection = features;
                 })
             
@@ -104,8 +118,22 @@ export default {
             cardsCf = crossfilter(res[0]).add(res[1])
             dim = cardsCf.dimension(d => d.loyaltynum)
             this.dataLocations = this.getLocationByCardType(this.cardType)
-             
         })
+
+        d3.csv("/data/car-assignments.csv")
+            .then((res) => {
+                const persons = res.map((d) => {
+                    return {
+                        name : d.FirstName + " " + d.LastName,
+                        id : +d.CarID,
+                        employment : d.CurrentEmploymentTitle
+                    }
+
+                })
+
+                this.persons = persons
+            })
+
 
     },
 
@@ -121,7 +149,7 @@ export default {
     },
 
     methods : {
-        csvToGeoJson(csv) {
+        listToGeoJson(csv) {
             const fc = {
                 type : 'FeatureCollection',
                 features : csv.map( (row) => {
@@ -144,21 +172,26 @@ export default {
         },
 
         getLocationByCardType(card) {
-            let newCf = cardsCf;
-            if (card.value == "Credit Card")  {
-                newCf = dim.filter(d => d == null);
-            } else if (card.value == "Loyalty Card") {
-                newCf = dim.filter(d => d != null);
-            } else {
-                newCf = dim.filter(null)
+            
+            if (card.value) { //check if card value is valid
+                let newCf;
+                if (card.value == "Credit Card")  {
+                    newCf = dim.filter(d => d == null);
+                } else if (card.value == "Loyalty Card") {
+                    newCf = dim.filter(d => d != null);
+                } else {
+                    newCf = dim.filter(null)
+                }
+
+                newCf = crossfilter(newCf.top(Infinity))
+                const dLocation = newCf.dimension(d => d.location);
+                const dLocations = dLocation.group().reduceCount().all();
+                
+                return dLocations.sort((x,y) => d3.ascending(x.value, y.value));
             }
 
-            newCf = crossfilter(newCf.top(Infinity))
-            const dLocation = newCf.dimension(d => d.location);
-            const dLocations = dLocation.group().reduceCount().all();
-            console.log(dLocations)
+            return this.dataLocations
             
-            return dLocations.sort((x,y) => d3.ascending(x.value, y.value));
              
         },
 
@@ -175,6 +208,7 @@ export default {
 <style scoped>
 
 .container {
+    width: 2000px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -185,7 +219,10 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px;
+}
+
+h4 {
+    border-bottom: 0.5px solid #00000017;
 }
 
 .col {
@@ -208,6 +245,30 @@ h1 {
     justify-content: right;
     vertical-align: middle;
     
+}
+
+.persons-list {
+    width: 300px;
+    height: 700px;
+    overflow: scroll;
+    overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px     rgba(194, 189, 189, 0.3); 
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(160, 130, 96, 0.295);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgb(97, 91, 83);
 }
 
 
