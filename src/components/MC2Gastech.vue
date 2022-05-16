@@ -21,7 +21,7 @@
                     </b-form-checkbox-group>
                 </b-row>
                 <b-row>
-                    <LocationsChart :popsAggr="dataLocations"/>
+                    <LocationsChart :id="'plot-1'" :popsAggr="dataLocations" @targetChange="setTarget"/>
                 </b-row>
             </b-col>
             <b-col class="map">
@@ -31,7 +31,7 @@
             <b-col>
                 <h4>Persons</h4>
                 <b-list-group class="persons-list">
-                    <b-list-group-item class="flex justify-content-between"  v-for="p in persons" :key="p.id">
+                    <b-list-group-item class="flex justify-content-between"  v-for="p in employees" :key="p.id">
                         {{p.name}}
                         <b-badge variant="light" pill 
                             style="margin-left:20px; padding-left: 15px;">
@@ -45,7 +45,14 @@
             
         </b-row>
         <b-row>
-            
+            <h5>{{locationTarget}}</h5>
+            <b-col>
+                <InfoChart :id="'plot-2'" :popsAggr="datesData"/>
+            </b-col>
+            <b-col>
+                <InfoChart :id="'plot-3'" :popsAggr="timeData"/>
+            </b-col>
+            <b-col></b-col>
         </b-row>
     </b-container>
     
@@ -57,20 +64,25 @@ const d3 = require("d3");
 
 import GeoMap from "./GeoMap.vue";
 import LocationsChart from "./LocationsChart.vue"
+import InfoChart from "./InfoChart.vue"
 
 let cardsCf;
 let dim;
+let locDim;
+let dateDim;
+let timeDim;
 
 export default {
     name : "MC2Gastech",
     components: {
     GeoMap,
-    LocationsChart
+    LocationsChart,
+    InfoChart
 },
 
     data() {
         return {
-            persons: [],
+            employees: [],
             pointCollection: {
                 type: 'FeatureCollection',
                 features: [
@@ -86,20 +98,19 @@ export default {
                     }
                 ]
             },
+            cardsData: [],
             dataLocations: [],
+            datesData: [],
+            timeData: [],
             cardType: {
                 value: "Total",
                 options: ["Total","Credit Card","Loyalty Card"]
-                }
+            },
+            locationTarget: "Total",
         }
     },
 
     mounted() {
-        d3.csv("/data/car-assignments.csv")
-            .then(res => {
-                this.employees = crossfilter(res);
-                })
-
         
         d3.csv("/data/gps.csv")
             .then((res) => {
@@ -115,14 +126,34 @@ export default {
             d3.csv("/data/cc_data.csv"),
             d3.csv("/data/loyalty_data.csv")
         ]).then((res) => {
-            cardsCf = crossfilter(res[0]).add(res[1])
+            this.cardsData = res[0].concat(res[1]).map((d) => {
+                return {
+                    date: new Date(d.timestamp.substring(0,10)),
+                    time: d.timestamp.length > 10 ? new Date(d.timestamp.substring(11)) : null,
+                    location: d.location,
+                    price: +d.price,
+                    ccnum: d.last4ccnum ? +d.last4ccnum : null,
+                    loyaltynum: d.loyaltynum ? +d.loyaltynum : null
+                }
+            })
+
+            cardsCf = crossfilter(this.cardsData)
             dim = cardsCf.dimension(d => d.loyaltynum)
+            locDim = cardsCf.dimension(d => d.location)
+            dateDim = cardsCf.dimension(d => d.date)
+            timeDim = cardsCf.dimension(d => d.time)
+
             this.dataLocations = this.getLocationByCardType(this.cardType)
+
+            this.filterDataset()
+
+            console.log(this.cardsData)
         })
+
 
         d3.csv("/data/car-assignments.csv")
             .then((res) => {
-                const persons = res.map((d) => {
+                const employees = res.map((d) => {
                     return {
                         name : d.FirstName + " " + d.LastName,
                         id : +d.CarID,
@@ -131,10 +162,10 @@ export default {
 
                 })
 
-                this.persons = persons
+                this.employees = employees
             })
 
-
+        
     },
 
     watch: {
@@ -145,14 +176,21 @@ export default {
 
             deep: true,
         },
-        
+
+        locationTarget: {
+            handler(newVal) {
+                console.log(newVal)
+                this.filterDataset()
+            }
+        }
+
     },
 
     methods : {
-        listToGeoJson(csv) {
+        listToGeoJson(list) {
             const fc = {
                 type : 'FeatureCollection',
-                features : csv.map( (row) => {
+                features : list.map( (row) => {
                     return {
                         type: 'Feature',
                         properties: {
@@ -174,18 +212,15 @@ export default {
         getLocationByCardType(card) {
             
             if (card.value) { //check if card value is valid
-                let newCf;
                 if (card.value == "Credit Card")  {
-                    newCf = dim.filter(d => d == null);
+                    dim.filter(d => d == null);
                 } else if (card.value == "Loyalty Card") {
-                    newCf = dim.filter(d => d != null);
+                    dim.filter(d => d != null);
                 } else {
-                    newCf = dim.filter(null)
+                    dim.filterAll()
                 }
 
-                newCf = crossfilter(newCf.top(Infinity))
-                const dLocation = newCf.dimension(d => d.location);
-                const dLocations = dLocation.group().reduceCount().all();
+                const dLocations = locDim.group().reduceCount().all();
                 
                 return dLocations.sort((x,y) => d3.ascending(x.value, y.value));
             }
@@ -195,13 +230,26 @@ export default {
              
         },
 
+        setTarget(tar) {
+            this.locationTarget = tar
+        },
+
+        filterDataset() {
+            if (this.locationTarget != "Total") {
+                locDim ? locDim.filterAll() : null
+                locDim.filter(d => d == this.locationTarget)
+            }
+            
+            this.datesData = dateDim.group().reduceCount().all()
+            this.timeData = timeDim.group().reduceCount().all()
+            
+        }
 
     }
 
 }
 
 </script>
-
 
 
 
@@ -213,6 +261,8 @@ export default {
     flex-direction: column;
     justify-content: space-between;
     max-width: fit-content;
+    margin-bottom: 50px;
+    gap:10px;
 }
 
 h1 {
@@ -228,7 +278,7 @@ h4 {
 .col {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 7px;
 }
 
 .plots {
