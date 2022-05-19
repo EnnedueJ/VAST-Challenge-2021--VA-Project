@@ -44,13 +44,13 @@
             </b-col>
             
         </b-row>
-        <b-row>
+        <b-row class="info-charts">
             <h5>{{locationTarget}}</h5>
             <b-col>
-                <InfoChart :id="'plot-2'" :popsAggr="datesData"/>
+                <InfoChart :id="'plot-2'" :popsAggr="datesData" :xaxis="xaxis1" :title="'Days'"/>
             </b-col>
             <b-col>
-                <InfoChart :id="'plot-3'" :popsAggr="timeData"/>
+                <InfoChart :id="'plot-3'" :popsAggr="timeData" :xaxis="xaxis2" :title="'Times'"/>
             </b-col>
             <b-col></b-col>
         </b-row>
@@ -67,7 +67,7 @@ import LocationsChart from "./LocationsChart.vue"
 import InfoChart from "./InfoChart.vue"
 
 let cardsCf;
-let dim;
+let cardDim;
 let locDim;
 let dateDim;
 let timeDim;
@@ -78,7 +78,7 @@ export default {
     GeoMap,
     LocationsChart,
     InfoChart
-},
+    },
 
     data() {
         return {
@@ -107,20 +107,21 @@ export default {
                 options: ["Total","Credit Card","Loyalty Card"]
             },
             locationTarget: "Total",
+            xaxis1 : {
+                    title: "January",
+                    type: "date",
+                    tickformat: "%a %d"
+                },
+
+            xaxis2 : {
+                title: "time",
+                tickformat : ".2f",
+                range: [2, 24]
+            }
         }
     },
 
     mounted() {
-        
-        d3.csv("/data/gps.csv")
-            .then((res) => {
-                const cf = crossfilter(res);
-                const gps = cf.dimension(d => d.id);
-                const filter = gps.filter(1).top(Infinity);
-                const features = this.listToGeoJson(filter);
-                this.pointCollection = features;
-                })
-            
         
         Promise.all([
             d3.csv("/data/cc_data.csv"),
@@ -129,7 +130,7 @@ export default {
             this.cardsData = res[0].concat(res[1]).map((d) => {
                 return {
                     date: new Date(d.timestamp.substring(0,10)),
-                    time: d.timestamp.length > 10 ? new Date(d.timestamp.substring(11)) : null,
+                    time: d.timestamp.length > 10 ? Number(d.timestamp.substring(11,16).replace(":",".")) : null,
                     location: d.location,
                     price: +d.price,
                     ccnum: d.last4ccnum ? +d.last4ccnum : null,
@@ -138,16 +139,15 @@ export default {
             })
 
             cardsCf = crossfilter(this.cardsData)
-            dim = cardsCf.dimension(d => d.loyaltynum)
+            cardDim = cardsCf.dimension(d => d.loyaltynum)
             locDim = cardsCf.dimension(d => d.location)
             dateDim = cardsCf.dimension(d => d.date)
             timeDim = cardsCf.dimension(d => d.time)
 
             this.dataLocations = this.getLocationByCardType(this.cardType)
 
-            this.filterDataset()
+            this.setInfoChartData()
 
-            console.log(this.cardsData)
         })
 
 
@@ -165,6 +165,15 @@ export default {
                 this.employees = employees
             })
 
+        d3.csv("/data/gps.csv")
+            .then((res) => {
+                const cf = crossfilter(res);
+                const gps = cf.dimension(d => d.id);
+                const filter = gps.filter(1).top(Infinity);
+                const features = this.listToGeoJson(filter);
+                this.pointCollection = features;
+                })
+
         
     },
 
@@ -180,7 +189,7 @@ export default {
         locationTarget: {
             handler(newVal) {
                 console.log(newVal)
-                this.filterDataset()
+                this.setInfoChartData()
             }
         }
 
@@ -210,14 +219,13 @@ export default {
         },
 
         getLocationByCardType(card) {
-            
             if (card.value) { //check if card value is valid
                 if (card.value == "Credit Card")  {
-                    dim.filter(d => d == null);
+                    cardDim.filter(d => d == null);
                 } else if (card.value == "Loyalty Card") {
-                    dim.filter(d => d != null);
+                    cardDim.filter(d => d != null);
                 } else {
-                    dim.filterAll()
+                    cardDim.filterAll()
                 }
 
                 const dLocations = locDim.group().reduceCount().all();
@@ -234,14 +242,15 @@ export default {
             this.locationTarget = tar
         },
 
-        filterDataset() {
+        setInfoChartData() {
             if (this.locationTarget != "Total") {
                 locDim ? locDim.filterAll() : null
                 locDim.filter(d => d == this.locationTarget)
+                
             }
             
             this.datesData = dateDim.group().reduceCount().all()
-            this.timeData = timeDim.group().reduceCount().all()
+            this.timeData = timeDim.group().all().filter(d => d.key != null)
             
         }
 

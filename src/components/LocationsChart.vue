@@ -14,14 +14,13 @@ export default {
     },
     data() {
         return {
-            
-            data : [{
+            data : {
                 type: "bar",
                 orientation: 'h',
                 marker: {
                     color: 'rgb(158,202,225)',
                 },
-            }],
+            },
             layout: {
                 height: 650,
                 width:500,
@@ -41,12 +40,13 @@ export default {
             },
             options: {
                 displayModeBar: false,
-            }
+            },
+            tarPoint: String,
         }
     },
     mounted() {
         this.plot = d3.select("#"+this.id).node()
-        Plotly.newPlot(this.plot, this.data, this.layout, this.options)
+        Plotly.newPlot(this.plot, [this.data], this.layout, this.options)
 
         this.plot.on("plotly_click",(d) => {
                     this.getPlotClick(d)
@@ -55,29 +55,32 @@ export default {
     },
     watch: {
         popsAggr(datum) {
-            this.data[0].y = datum.map(d => d.key);
-            this.data[0].x = datum.map(d => d.value);
-            Plotly.react(this.plot, this.data, this.layout, this.options)
+            this.data.y = datum.map(d => d.key);
+            this.data.x = datum.map(d => d.value);
+            this.changeColor(this.tarPoint, this.data.y)
+            Plotly.react(this.plot, [this.data], this.layout, this.options)
             
         },
         deep : true
     },
     methods: {
         getPlotClick(d) {
-            this.$emit('targetChange', d.points[0].y)
-            /*
-            const target = d.points[0].y
+            this.tarPoint = d.points[0].y
+            this.$emit('targetChange', this.tarPoint)
+            
             const fullData = d.points[0].data.y
-            const pn = fullData.indexOf(target)
-            let colors = Array(fullData.length).fill('rgb(158,202,225)');
+            this.changeColor(this.tarPoint, fullData)
+
+            Plotly.react(this.plot, [this.data], this.layout, this.options);
+            
+        },
+
+        changeColor(tar, data) {
+            const pn = data.indexOf(tar)
+            let colors = Array(data.length).fill('rgb(158,202,225)');
             
             colors[pn] = 'rgb(200,50,100)'
-            const update = {'marker':{
-                color: colors,
-                }};
-
-            Plotly.restyle(this.plot, update);
-            */
+            this.data.marker.color = colors
         }
     }
 }

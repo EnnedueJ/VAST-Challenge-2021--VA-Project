@@ -1,9 +1,10 @@
 <template>
-    <div :id="id" :data="popsAggr" :layout="layout" :options="options" />
+    <h6>{{title}}</h6>
+    <div :id="id" :data="popsAggr" :layout="layout" :options="options" :xaxis="xaxis" :title="title"/>
 </template>
 
 <script>
-const Plotly = require("plotly.js/dist/plotly-basic");
+const Plotly = require("plotly.js/dist/plotly-cartesian");
 const d3 = require("d3");
 
 export default {
@@ -11,15 +12,28 @@ export default {
     props: {
         id: String,
         popsAggr: Array,
+        xaxis: Object,
+        title: String,
     },
     data() {
         return {
-            data : [{
-                type: "scatter",
-            }],
+            data : {
+                type: this.id == "plot-2" ? "line" : "histogram",
+                histfunc:"sum",
+                xbins: {
+                    start: 2.10,
+                    size: 1.0,
+                },
+                line: {
+                    color: 'rgb(200,50,100)'
+                },
+                marker: {
+                    color: 'rgb(200,50,100)'
+                }
+            },
             layout: {
                 height: 300,
-                width:400,
+                width:450,
                 margin: {
                     t:10,
                     b:35,
@@ -29,11 +43,8 @@ export default {
                 font: {
                     family: "Trebuchet MS, sans-serif"
                 },
-                xaxis: {
-                    title: "January",
-                    type: "date",
-                    tickformat: "%a %d"
-                }
+                xaxis: this.xaxis,
+                bargap: 0.04, 
                 
             },
             options: {
@@ -43,14 +54,14 @@ export default {
     },
     mounted() {
         this.plot = d3.select("#"+this.id).node()
-        Plotly.newPlot(this.plot, this.data, this.layout)
+        Plotly.newPlot(this.plot, [this.data], this.layout, this.options)
 
     },
     watch: {
         popsAggr(datum) {
-            this.data[0].x = datum.map(d => d.key);
-            this.data[0].y = datum.map(d => d.value);
-            Plotly.react(this.plot, this.data, this.layout, this.options)
+            this.data.x = datum.map(d => d.key);
+            this.data.y = datum.map(d => d.value);
+            Plotly.react(this.plot, [this.data], this.layout, this.options)
             
         },
         deep : true
@@ -62,6 +73,8 @@ export default {
 </script>
 
 <style scoped>
-
+* {
+    margin: 0;
+}
 
 </style>
