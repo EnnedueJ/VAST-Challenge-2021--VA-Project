@@ -5,10 +5,10 @@
             <h1>Mini Challenge 2</h1>
         </b-row>
         <b-row>
-            <b-col class="plots">
+            <b-col class="loc-plot">
                 <b-row id="titles">
-                    <h4>Popular locations</h4>
-                    <!--<h7>Most popular location by number of visitors.</h7>-->
+                    <h4>Location popularity</h4>
+                    <h6><i>Click on a location to inspect.</i></h6>
                 </b-row>
                 <b-row>
                     <b-form-checkbox-group button-variant="outline-secondary"
@@ -25,11 +25,34 @@
                 </b-row>
             </b-col>
             <b-col class="map">
-                <h4>Map</h4>
+                <h4>Abila's Map</h4>
                 <GeoMap :featureCollection="pointCollection"/>
+                <b-row class="under-map">
+                    <b-col class="dropdown">
+                        <h6>Day</h6>
+                        <b-form-select
+                            v-model="selectedDay.value"
+                            :options="selectedDay.options"
+                            class="mb-1"
+                            value-field="value"
+                            text-field="value"
+                            style="width:80%"
+                            > 
+                        </b-form-select>
+                        
+                    </b-col>
+                    <b-col class="form-range" lg="9">
+                        <b-form-input 
+                            id="range-bar" 
+                            type="range"
+
+                            style="width:90%">
+                        </b-form-input>
+                    </b-col>
+                </b-row>
             </b-col>
             <b-col>
-                <h4>Persons</h4>
+                <h4>Employees</h4>
                 <b-list-group class="persons-list">
                     <b-list-group-item class="flex justify-content-between"  v-for="p in employees" :key="p.id">
                         {{p.name}}
@@ -44,13 +67,14 @@
             </b-col>
             
         </b-row>
-        <b-row class="info-charts">
-            <h5>{{locationTarget}}</h5>
-            <b-col>
+        <b-row class="row-info-charts">
+            <h5><b>{{locationTarget}}</b></h5>
+            <b-col class="col-info-charts">
                 <InfoChart :id="'plot-2'" :popsAggr="datesData" :xaxis="xaxis1" :title="'Days'"/>
+                <InfoChart :id="'plot-3'" :popsAggr="timeData" :xaxis="xaxis2" :title="'Times'"/>
             </b-col>
             <b-col>
-                <InfoChart :id="'plot-3'" :popsAggr="timeData" :xaxis="xaxis2" :title="'Times'"/>
+                
             </b-col>
             <b-col></b-col>
         </b-row>
@@ -67,6 +91,8 @@ import LocationsChart from "./LocationsChart.vue"
 import InfoChart from "./InfoChart.vue"
 
 let cardsCf;
+let gpsCf;
+let dayDim;
 let cardDim;
 let locDim;
 let dateDim;
@@ -117,7 +143,12 @@ export default {
                 title: "time",
                 tickformat : ".2f",
                 range: [2, 24]
-            }
+            },
+            selectedDay: {
+                value: null,
+                options: [
+                ],
+            },
         }
     },
 
@@ -150,7 +181,7 @@ export default {
 
         })
 
-
+        //car dataset loading in order to populate Employees list
         d3.csv("/data/car-assignments.csv")
             .then((res) => {
                 const employees = res.map((d) => {
@@ -167,12 +198,17 @@ export default {
 
         d3.csv("/data/gps.csv")
             .then((res) => {
-                const cf = crossfilter(res);
-                const gps = cf.dimension(d => d.id);
-                const filter = gps.filter(1).top(Infinity);
-                const features = this.listToGeoJson(filter);
-                this.pointCollection = features;
-                })
+                gpsCf = crossfilter(res)
+                dayDim = gpsCf.dimension(d => d.Timestamp.substring(0,10))
+                const uniqueDays = dayDim.group().all().filter(d => d.value)
+                this.selectedDay.options = uniqueDays.map(d => ({
+                    value: d.key
+                    }))
+                
+                this.selectedDay.value = this.selectedDay.options[0].value
+                this.daySelection()
+
+            })
 
         
     },
@@ -182,7 +218,6 @@ export default {
             handler(newVal) {
                 this.dataLocations = this.getLocationByCardType(newVal)
             },
-
             deep: true,
         },
 
@@ -191,6 +226,14 @@ export default {
                 console.log(newVal)
                 this.setInfoChartData()
             }
+        },
+        selectedDay: {
+            handler(newVal) {
+                this.selectedDay.value = newVal.value
+                console.log(this.selectedDay.value)
+                this.daySelection()
+            },
+            deep:true
         }
 
     },
@@ -203,19 +246,19 @@ export default {
                     return {
                         type: 'Feature',
                         properties: {
-                            personID: +row.id,
-                            time: row.Timestamp,
+                            employeeID: +row.employee,
+                            time: row.time,
                         },
                         geometry: {
                             type: 'Point',
-                            coordinates: [+row.long, +row.lat]
+                            coordinates: [+row.x, +row.y]
                         }
                     }
                 })
 
             }
 
-            return fc
+            return fc;
         },
 
         getLocationByCardType(card) {
@@ -225,21 +268,23 @@ export default {
                 } else if (card.value == "Loyalty Card") {
                     cardDim.filter(d => d != null);
                 } else {
-                    cardDim.filterAll()
+                    cardDim.filterAll();
                 }
 
                 const dLocations = locDim.group().reduceCount().all();
+
+                this.setInfoChartData()
                 
                 return dLocations.sort((x,y) => d3.ascending(x.value, y.value));
             }
 
-            return this.dataLocations
+            return this.dataLocations;
             
              
         },
 
         setTarget(tar) {
-            this.locationTarget = tar
+            this.locationTarget = tar;
         },
 
         setInfoChartData() {
@@ -249,11 +294,39 @@ export default {
                 
             }
             
-            this.datesData = dateDim.group().reduceCount().all()
-            this.timeData = timeDim.group().all().filter(d => d.key != null)
+            this.datesData = dateDim.group().reduceCount().all();
+            this.timeData = timeDim.group().all().filter(d => d.key != null);
             
-        }
+        },
 
+        daySelection() {
+            dayDim.filterAll()
+            dayDim.filter(d => d == this.selectedDay.value);
+            const day = dayDim.top(Infinity);
+            const paths = day.map(row => ({
+                employee: row.id,
+                time: new Date(row.Timestamp),
+                x: +row.long,
+                y: +row.lat
+            }));
+        
+            const finalPaths = paths.sort((x,y) => d3.ascending(x.time, y.time));
+
+            this.pointCollection = this.listToGeoJson(finalPaths);
+            
+
+            // const trajs = d3.nest()
+            //     .key(d => d.employee)
+            //     .entries(paths)
+
+
+            // const tr = d3.values(trajs).map((d) => {
+            //     const pls = d.values.map((p, i) => {
+            //         if (i == 0) return 0;
+            //         return eu
+            //     })
+            // })
+        }
     }
 
 }
@@ -280,17 +353,19 @@ h1 {
     justify-content: center;
 }
 
-h4 {
+h4, h5 {
     border-bottom: 0.5px solid #00000017;
 }
+
+
 
 .col {
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 6px;
 }
 
-.plots {
+.loc-plot {
     align-items: right;
     text-align: right;
 }
@@ -306,11 +381,63 @@ h4 {
     
 }
 
+.col-info-charts {
+    flex-direction: row;
+}
+
+.row-info-charts {
+    padding: 20px;
+    padding-top: 5px;
+}
+
 .persons-list {
     width: 300px;
     height: 700px;
     overflow: scroll;
     overflow-x: hidden;
+}
+
+
+.mb-1 {
+    width: 30%;
+    cursor: pointer;
+}
+
+.form-range {
+    width: 70%;
+    height: 80%;
+}
+
+.dropdown {
+    width: 15%;
+    flex-direction: row;
+    
+}
+
+.dropdown * {
+    border: 0;
+    margin-right: 10px;
+    align-items: center;
+    justify-content: center;
+}
+
+.dropdown h6 {
+    font-weight: bold;
+    margin: 10px;
+    
+}
+
+
+.under-map {
+    gap: 40px;
+    box-shadow: 0.3px 0.1px 0.3px 0.3px rgba(0,0,0,0.3);
+    border-radius: 30px;
+}
+
+.form-range * {
+    margin: 7px;
+    align-items: center;
+    justify-content: center;
 }
 
 ::-webkit-scrollbar {

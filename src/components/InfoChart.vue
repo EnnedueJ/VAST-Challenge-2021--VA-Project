@@ -1,6 +1,8 @@
 <template>
-    <h6>{{title}}</h6>
-    <div :id="id" :data="popsAggr" :layout="layout" :options="options" :xaxis="xaxis" :title="title"/>
+    <div>
+        <!--<h6>{{title}}</h6>-->
+        <div :id="id" :data="popsAggr" :layout="layout" :options="options" :xaxis="xaxis" :title="title"/>
+    </div>
 </template>
 
 <script>
@@ -22,7 +24,7 @@ export default {
                 histfunc:"sum",
                 xbins: {
                     start: 2.10,
-                    size: 1.0,
+                    size: 1.,
                 },
                 line: {
                     color: 'rgb(200,50,100)'
@@ -32,18 +34,21 @@ export default {
                 }
             },
             layout: {
-                height: 300,
-                width:450,
+                height: 250,
+                width:400,
                 margin: {
                     t:10,
                     b:35,
                     r:10,
-                    l:30
+                    l:40
                 },
                 font: {
                     family: "Trebuchet MS, sans-serif"
                 },
                 xaxis: this.xaxis,
+                yaxis: {
+                    title: "Visits"
+                },
                 bargap: 0.04, 
                 
             },
@@ -77,4 +82,7 @@ export default {
     margin: 0;
 }
 
+h6 {
+    padding-left: 15px;
+}
 </style>
