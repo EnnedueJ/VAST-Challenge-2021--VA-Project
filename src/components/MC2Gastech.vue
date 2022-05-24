@@ -45,10 +45,16 @@
                         <b-form-input 
                             id="range-bar" 
                             type="range"
-
-                            style="width:90%">
+                            v-model="timeInterval.value"
+                            min="0"
+                            max="52700"
+                            step="2"
+                            >
                         </b-form-input>
                     </b-col>
+                    <div class="timeValue">
+                        {{timeInterval.value}}
+                    </div>
                 </b-row>
             </b-col>
             <b-col>
@@ -149,6 +155,9 @@ export default {
                 options: [
                 ],
             },
+            timeInterval: {
+                value:0,
+            }
         }
     },
 
@@ -176,7 +185,7 @@ export default {
             timeDim = cardsCf.dimension(d => d.time)
 
             this.dataLocations = this.getLocationByCardType(this.cardType)
-
+            
             this.setInfoChartData()
 
         })
@@ -204,6 +213,7 @@ export default {
                 this.selectedDay.options = uniqueDays.map(d => ({
                     value: d.key
                     }))
+                
                 
                 this.selectedDay.value = this.selectedDay.options[0].value
                 this.daySelection()
@@ -234,6 +244,13 @@ export default {
                 this.daySelection()
             },
             deep:true
+        },
+        timeInterval: {
+            handler(newVal) {
+                console.log(newVal);
+                this.daySelection();
+            },
+            deep:true,
         }
 
     },
@@ -242,20 +259,20 @@ export default {
         listToGeoJson(list) {
             const fc = {
                 type : 'FeatureCollection',
-                features : list.map( (row) => {
+                features : list.map( (row, id) => {
                     return {
                         type: 'Feature',
                         properties: {
                             employeeID: +row.employee,
-                            time: row.time,
+                            time: id,
                         },
                         geometry: {
                             type: 'Point',
                             coordinates: [+row.x, +row.y]
                         }
                     }
-                })
-
+                    
+                }).filter(d => d.properties.time == this.timeInterval.value)
             }
 
             return fc;
@@ -303,17 +320,18 @@ export default {
             dayDim.filterAll()
             dayDim.filter(d => d == this.selectedDay.value);
             const day = dayDim.top(Infinity);
-            const paths = day.map(row => ({
+            const paths = day.map((row) => ({
                 employee: row.id,
                 time: new Date(row.Timestamp),
                 x: +row.long,
                 y: +row.lat
             }));
         
-            const finalPaths = paths.sort((x,y) => d3.ascending(x.time, y.time));
 
+
+            const finalPaths = paths.sort((x,y) => d3.ascending(x.time, y.time));
+            this.timeInterval.max = String(finalPaths.length)
             this.pointCollection = this.listToGeoJson(finalPaths);
-            
 
             // const trajs = d3.nest()
             //     .key(d => d.employee)
@@ -403,20 +421,14 @@ h4, h5 {
     cursor: pointer;
 }
 
-.form-range {
-    width: 70%;
-    height: 80%;
-}
 
 .dropdown {
-    width: 15%;
+    width: 25%;
     flex-direction: row;
-    
 }
 
 .dropdown * {
     border: 0;
-    margin-right: 10px;
     align-items: center;
     justify-content: center;
 }
@@ -424,20 +436,32 @@ h4, h5 {
 .dropdown h6 {
     font-weight: bold;
     margin: 10px;
-    
 }
 
 
 .under-map {
-    gap: 40px;
     box-shadow: 0.3px 0.1px 0.3px 0.3px rgba(0,0,0,0.3);
     border-radius: 30px;
 }
 
-.form-range * {
+.form-range {
+    text-align: right;
+    width:60%;
+    height: 80%;
+}
+
+.form-range input {
+    width: 100%;
+}
+
+.form-range input {
     margin: 7px;
-    align-items: center;
-    justify-content: center;
+}
+
+.timeValue {
+    width: 10%;
+    text-align: center;
+    padding: 7px;
 }
 
 ::-webkit-scrollbar {

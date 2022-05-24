@@ -5,7 +5,6 @@ export default function BuildMap() {
     let topology;
 
     function me(selection) {
-        //console.log(selection.datum())
 
         const boundaries = selection.node().parentNode.getBoundingClientRect();
         const projection = d3.geoMercator()
@@ -16,13 +15,30 @@ export default function BuildMap() {
 
         const path = d3.geoPath().projection(projection)
         
-        path.pointRadius(3)
+        path.pointRadius(4)
 
-        selection.selectAll("path")
+        if (selection.classed("features")) {
+
+            const gs = selection.selectAll("g")
+                .data(selection.datum().features)
+                .join("g")
+                .filter(d => d.properties.name != "Default")
+                
+            gs.append("path")
+                .attr("d", path)
+
+            /*gs.append("text")
+                .text(d => d.properties.employeeID)
+                .attr("transform", d => "translate("+ projection(d.geometry.coordinates) + ")")*/
+
+        } else {
+
+            selection.selectAll("path")
             .data(selection.datum().features)
             .join("path")
                 .attr("d", path)
-
+        }
+        
 
         
     }    

@@ -63,7 +63,9 @@ export default {
 
     watch: {
         featureCollection(features) {
+            console.log(features)
             const gFeatures = d3.select(this.$refs.features)
+
             gFeatures.datum(features)
                 .call(map)
         },
@@ -89,9 +91,9 @@ g.world path {
 }
 
 g.features path {
-    stroke-width: 0.3px;
-    stroke-opacity: 20%;
-    fill: rgb(248, 217, 178);
+    stroke-width: 2px;
+    stroke-opacity: 80%;
+    fill: none;
     stroke: black;
 }
 </style>
