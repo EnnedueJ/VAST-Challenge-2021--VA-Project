@@ -26,7 +26,7 @@
             </b-col>
             <b-col class="map">
                 <h4>Abila's Map</h4>
-                <GeoMap :featureCollection="pointCollection"/>
+                <GeoMap :featureCollection="pointCollection" @emitId="employeeSelection"/>
                 <b-row class="under-map">
                     <b-col class="dropdown">
                         <h6>Day</h6>
@@ -48,7 +48,7 @@
                             v-model="timeInterval.value"
                             min="0"
                             max="52700"
-                            step="2"
+                            step="5"
                             >
                         </b-form-input>
                     </b-col>
@@ -60,7 +60,10 @@
             <b-col>
                 <h4>Employees</h4>
                 <b-list-group class="persons-list">
-                    <b-list-group-item class="flex justify-content-between"  v-for="p in employees" :key="p.id">
+                    <b-list-group-item class="flex justify-content-between" 
+                         v-for="p in employees" 
+                         :key="p.id"
+                         :variant="p.selected ? 'warning'  : ''">
                         {{p.name}}
                         <b-badge variant="light" pill 
                             style="margin-left:20px; padding-left: 15px;">
@@ -166,6 +169,7 @@ export default {
         Promise.all([
             d3.csv("/data/cc_data.csv"),
             d3.csv("/data/loyalty_data.csv")
+
         ]).then((res) => {
             this.cardsData = res[0].concat(res[1]).map((d) => {
                 return {
@@ -240,7 +244,6 @@ export default {
         selectedDay: {
             handler(newVal) {
                 this.selectedDay.value = newVal.value
-                console.log(this.selectedDay.value)
                 this.daySelection()
             },
             deep:true
@@ -251,6 +254,11 @@ export default {
                 this.daySelection();
             },
             deep:true,
+        },
+        employeeSelected: {
+            handler(newVal) {
+                this.employeeSelection(newVal);
+            }
         }
 
     },
@@ -272,7 +280,7 @@ export default {
                         }
                     }
                     
-                }).filter(d => d.properties.time == this.timeInterval.value)
+                }).filter(d => d.properties.time <= this.timeInterval.value)
             }
 
             return fc;
@@ -296,12 +304,28 @@ export default {
             }
 
             return this.dataLocations;
-            
-             
         },
 
         setTarget(tar) {
             this.locationTarget = tar;
+        },
+
+        employeeSelection(id) {
+            
+            console.log(id);
+            this.employees = this.employees.map((p) => {
+                if (p.id == id) {
+                    return {
+                        ...p,
+                        selected: true,
+                    }
+                }
+
+                return {
+                    ...p,
+                    selected: false,
+                }
+            })
         },
 
         setInfoChartData() {
@@ -316,6 +340,7 @@ export default {
             
         },
 
+
         daySelection() {
             dayDim.filterAll()
             dayDim.filter(d => d == this.selectedDay.value);
@@ -327,24 +352,12 @@ export default {
                 y: +row.lat
             }));
         
-
-
             const finalPaths = paths.sort((x,y) => d3.ascending(x.time, y.time));
             this.timeInterval.max = String(finalPaths.length)
             this.pointCollection = this.listToGeoJson(finalPaths);
 
-            // const trajs = d3.nest()
-            //     .key(d => d.employee)
-            //     .entries(paths)
-
-
-            // const tr = d3.values(trajs).map((d) => {
-            //     const pls = d.values.map((p, i) => {
-            //         if (i == 0) return 0;
-            //         return eu
-            //     })
-            // })
         }
+
     }
 
 }
@@ -469,7 +482,7 @@ h4, h5 {
 }
 
 ::-webkit-scrollbar-track {
-    -webkit-box-shadow: inset 0 0 6px     rgba(194, 189, 189, 0.3); 
+    -webkit-box-shadow: inset 0 0 6px rgba(194, 189, 189, 0.3); 
     border-radius: 5px;
 }
 
