@@ -53,7 +53,9 @@
                         </b-form-input>
                     </b-col>
                     <div class="timeValue">
-                        {{timeInterval.value}}
+                        {{timeInterval.value != 0 ? 
+                            pointCollection.features.at(-1).properties.dateTime.toString().split(" ")[4] 
+                            : "00:00"}}
                     </div>
                 </b-row>
             </b-col>
@@ -243,6 +245,9 @@ export default {
         },
         selectedDay: {
             handler(newVal) {
+                if (newVal != this.selectedDay.value) {
+                    this.timeInterval.value = 0;
+                }
                 this.selectedDay.value = newVal.value
                 this.daySelection()
             },
@@ -250,7 +255,9 @@ export default {
         },
         timeInterval: {
             handler(newVal) {
-                console.log(newVal);
+                console.log(newVal.value)
+                console.log(this.pointCollection.features.at(-1))
+                
                 this.daySelection();
             },
             deep:true,
@@ -259,7 +266,7 @@ export default {
             handler(newVal) {
                 this.employeeSelection(newVal);
             }
-        }
+        },
 
     },
 
@@ -273,6 +280,7 @@ export default {
                         properties: {
                             employeeID: +row.employee,
                             time: id,
+                            dateTime: row.time 
                         },
                         geometry: {
                             type: 'Point',
@@ -280,7 +288,7 @@ export default {
                         }
                     }
                     
-                }).filter(d => d.properties.time <= this.timeInterval.value)
+                }).filter(d => (d.properties.time <= this.timeInterval.value))
             }
 
             return fc;
@@ -310,22 +318,23 @@ export default {
             this.locationTarget = tar;
         },
 
-        employeeSelection(id) {
+        employeeSelection(ids) {
             
-            console.log(id);
-            this.employees = this.employees.map((p) => {
-                if (p.id == id) {
+            console.log(ids);
+            this.employees = this.employees.map((em) => {
+                if (ids.includes(em.id)) {
                     return {
-                        ...p,
+                        ...em,
                         selected: true,
                     }
                 }
 
                 return {
-                    ...p,
+                    ...em,
                     selected: false,
                 }
-            })
+            }).sort((a,b) => (Number(a.id) || 36) - (Number(b.id) || 36))
+            .sort((a,b) => b.selected - a.selected);
         },
 
         setInfoChartData() {
@@ -339,7 +348,6 @@ export default {
             this.timeData = timeDim.group().all().filter(d => d.key != null);
             
         },
-
 
         daySelection() {
             dayDim.filterAll()

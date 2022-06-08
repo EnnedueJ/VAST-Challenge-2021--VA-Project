@@ -21,17 +21,19 @@ export default {
         return {
             data : {
                 type: this.id == "plot-2" ? "line" : "histogram",
-                histfunc:"sum",
+                histfunc: "sum",
                 xbins: {
-                    start: 2.10,
+                    start: 2.,
                     size: 1.,
+                    end: 23.
                 },
                 line: {
                     color: 'rgb(200,50,100)'
                 },
                 marker: {
                     color: 'rgb(200,50,100)'
-                }
+                },
+                fill: 'tonexty',
             },
             layout: {
                 height: 250,

@@ -1,5 +1,6 @@
 <template>
-    <svg id="mapsvg" style="width:950; height:700" viewbox="[0, 0, width, height]">
+    <svg id="mapsvg" style="width:950; height:700;">
+        <image class="map-png" xlink:href="/data/MC2-tourist.jpg" preserveAspectRatio="none"></image>
         <g class="world" ref="world"></g>
         <g class="features" ref="features"></g>
     </svg>
@@ -67,7 +68,6 @@ export default {
 
             gFeatures.datum(features)
                 .call(map.on("id", d => {
-                    console.log(d)
                     this.$emit('emitId', d);
                     }
                 ))
@@ -82,10 +82,6 @@ export default {
 
 <style>
 
-#mapsvg {
-    background-color: rgb(252, 248, 245);
-}
-
 g.world path {
     stroke: rgb(84, 83, 83);
     stroke-linecap:round;
@@ -97,5 +93,11 @@ g.world path {
 g.features path {
     stroke-width: 1px;
     stroke: black;
+}
+
+image {
+    width: 100%;
+    height: 99%;
+    opacity: 80%;
 }
 </style>
