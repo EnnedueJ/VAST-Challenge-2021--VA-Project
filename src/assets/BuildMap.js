@@ -26,7 +26,9 @@ export default function BuildMap() {
         dispatch.call("id", this, [id])
     }
     
-
+    const opacityScale = d3.scaleLinear()
+        .domain([1,100])
+        .range(["rgba(0,0,0,0)","rgba(0,0,0,0.7)"])
 
     function me(selection) {
         container = selection;
@@ -41,18 +43,22 @@ export default function BuildMap() {
         const path = d3.geoPath().projection(projection)
         path.pointRadius(4)
 
-        
-
-        
 
         if (container.classed("features")) {
             //features section
             container.selectAll("g").remove()
 
-            const lastIDs = d3.groups(container.datum().features, d => d.properties.employeeID).map(d => d[1].at(-1))
+            const feats = Array.from(d3.group(container.datum().features, d => d.properties.employeeID), 
+                ([, value]) => value.slice(-50).map( (rec,i) => ({
+                            ...rec,
+                            properties : Object.assign(rec.properties, {timeId: i})
+                            
+                        }))
+                    )
 
-            const feats = Array.from(d3.group(container.datum().features, d => d.properties.employeeID), ([, value]) => value.slice(-50))
-            const finalFeats = [].concat.apply([],feats).sort(d => d.properties.time)
+            const finalFeats = [].concat.apply([],feats)
+
+            const lastIDs = d3.groups(finalFeats, d => d.properties.employeeID).map(d => d[1].at(-1))
 
             const gs = container.selectAll("g")
                 .data(finalFeats)
@@ -62,20 +68,18 @@ export default function BuildMap() {
             let currId;
             gs.append("path")
                 .attr("d", path)
-                .attr("fill", d =>  lastIDs.includes(d) ? "red" : "none")
-                .attr("stroke-opacity", d =>  lastIDs.includes(d) ? "100%" : "10%")
+                .attr("fill", d => lastIDs.includes(d) ? "red" : opacityScale(d.properties.timeId))
                 .on("mouseover", (event) => {
                     currId = event.target.__data__.properties.employeeID
                     container.selectAll("path")
                         .filter(d => d.properties.employeeID == currId)
                         .attr("fill", d =>  lastIDs.includes(d) ? "blue" : "yellow")
                         
-                        
                 })
                 .on("mouseout", () => {
                     container.selectAll("path")
                         .filter(d => d.properties.employeeID == currId)
-                        .attr("fill", d =>  lastIDs.includes(d) ? "red" : "none")
+                        .attr("fill", d =>  lastIDs.includes(d) ? "red" : opacityScale(d.properties.timeId))
                 })
                 .on("click", dispatcher)
                 

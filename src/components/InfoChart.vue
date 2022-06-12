@@ -24,7 +24,7 @@ export default {
                 histfunc: "sum",
                 xbins: {
                     start: 2.,
-                    size: 1.,
+                    size: 1.1,
                     end: 23.
                 },
                 line: {

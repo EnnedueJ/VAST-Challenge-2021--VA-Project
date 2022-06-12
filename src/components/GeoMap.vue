@@ -92,6 +92,7 @@ g.world path {
 
 g.features path {
     stroke-width: 1px;
+    stroke-opacity: 0;
     stroke: black;
 }
 

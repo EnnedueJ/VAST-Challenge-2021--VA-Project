@@ -65,7 +65,7 @@
                     <b-list-group-item class="flex justify-content-between" 
                          v-for="p in employees" 
                          :key="p.id"
-                         :variant="p.selected ? 'warning'  : ''">
+                         :variant="p.selected ? 'warning' : ''">
                         {{p.name}}
                         <b-badge variant="light" pill 
                             style="margin-left:20px; padding-left: 15px;">
@@ -256,7 +256,6 @@ export default {
         timeInterval: {
             handler(newVal) {
                 console.log(newVal.value)
-                console.log(this.pointCollection.features.at(-1))
                 
                 this.daySelection();
             },
