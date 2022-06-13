@@ -61,7 +61,6 @@ export default {
             Plotly.react(this.plot, [this.data], this.layout, this.options)
             
         },
-        deep : true
     },
     methods: {
         getPlotClick(d) {

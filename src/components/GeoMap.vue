@@ -1,9 +1,14 @@
 <template>
     <svg id="mapsvg" style="width:950; height:700;">
-        <image class="map-png" xlink:href="/data/MC2-tourist.jpg" preserveAspectRatio="none"></image>
+        <image class="map-png" xlink:href="/data/MC2-tourist-modified.png" preserveAspectRatio="none"></image>
         <g class="world" ref="world"></g>
         <g class="features" ref="features"></g>
     </svg>
+    <div class="toggle-button">
+        <b-form-checkbox v-model="trajectories" name="check-button" button-variant="outline-primary" switch>
+            <b>Trajectories</b>
+        </b-form-checkbox>
+    </div>
 </template>
 
 <script>
@@ -39,6 +44,7 @@ export default {
     },
     data() {
         return {
+            trajectories: true,
         }
     },
 
@@ -64,16 +70,25 @@ export default {
 
     watch: {
         featureCollection(features) {
-            const gFeatures = d3.select(this.$refs.features)
 
-            gFeatures.datum(features)
+            d3.select(this.$refs.features).datum(features)
                 .call(map.on("id", d => {
                     this.$emit('emitId', d);
                     }
                 ))
 
         },
-        deep : true
+
+        trajectories : {
+            handler() {
+                d3.select(this.$refs.features).datum({...this.featureCollection}).call(map.on("id", d => {
+                    this.$emit('emitId', d);
+                    }
+                ),
+                this.trajectories)
+            }
+        }
+
     }
 
 }
@@ -100,5 +115,12 @@ image {
     width: 100%;
     height: 99%;
     opacity: 80%;
+}
+
+.toggle-button {
+    position: relative;
+    width: 20%;
+    bottom: 700px;
+    left: 770px;
 }
 </style>

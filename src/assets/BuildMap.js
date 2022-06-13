@@ -1,4 +1,4 @@
-const d3 = require('d3')
+const d3 = require('d3');
 
 
 export default function BuildMap() {
@@ -22,15 +22,15 @@ export default function BuildMap() {
     //     .on("end", brushended)
 
     function dispatcher(event) {
-        const id = event.target.__data__.properties.employeeID
-        dispatch.call("id", this, [id])
+        const id = event.target.__data__.properties.employeeID;
+        dispatch.call("id", this, [id]);
     }
     
     const opacityScale = d3.scaleLinear()
-        .domain([1,100])
-        .range(["rgba(0,0,0,0)","rgba(0,0,0,0.7)"])
+        .domain([1,50])
+        .range(["rgba(0,0,0,0)","rgba(0,0,0,0.4)"])
 
-    function me(selection) {
+    function me(selection, trajectories = true) {
         container = selection;
         //topology and projection section
         const boundaries = container.node().parentNode.getBoundingClientRect();
@@ -40,33 +40,29 @@ export default function BuildMap() {
                 topology
             )
 
-        const path = d3.geoPath().projection(projection)
-        path.pointRadius(4)
+        const path = d3.geoPath().projection(projection);
+        path.pointRadius(4);
 
 
         if (container.classed("features")) {
-            //features section
-            container.selectAll("g").remove()
 
+            //grouping employees by ID to extract trajectories
             const feats = Array.from(d3.group(container.datum().features, d => d.properties.employeeID), 
-                ([, value]) => value.slice(-50).map( (rec,i) => ({
+                ([, value]) => value.slice(trajectories ? -50 : 0).map( (rec,i) => ({
                             ...rec,
                             properties : Object.assign(rec.properties, {timeId: i})
-                            
                         }))
                     )
 
-            const finalFeats = [].concat.apply([],feats)
+            const finalFeats = [].concat.apply([],feats);
 
-            const lastIDs = d3.groups(finalFeats, d => d.properties.employeeID).map(d => d[1].at(-1))
-
-            const gs = container.selectAll("g")
-                .data(finalFeats)
-                .join("g")
-                .filter(d => d.properties.name != "Default")
-                
+            const lastIDs = d3.groups(finalFeats, d => d.properties.employeeID).map(d => d[1].at(-1));
+            
             let currId;
-            gs.append("path")
+
+            container.selectAll("path")
+                .data(finalFeats)
+                .join("path")
                 .attr("d", path)
                 .attr("fill", d => lastIDs.includes(d) ? "red" : opacityScale(d.properties.timeId))
                 .on("mouseover", (event) => {
@@ -95,14 +91,11 @@ export default function BuildMap() {
                 .attr("stroke-opacity","50%")
         }
 
-    
-        
-
-        
     }    
 
+    //outside functions
     me.addTopology = function(top) {
-        topology = top
+        topology = top;
     }
 
     me.on = function (eventType, handler) {
@@ -111,6 +104,8 @@ export default function BuildMap() {
         return me;
     }
 
-    return me;
+    
 
+
+    return me;
 }

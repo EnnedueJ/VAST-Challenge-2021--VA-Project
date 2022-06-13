@@ -238,8 +238,8 @@ export default {
         },
 
         locationTarget: {
-            handler(newVal) {
-                console.log(newVal)
+            handler() {
+                console.log()
                 this.setInfoChartData()
             }
         },
