@@ -6,16 +6,16 @@ export default function BuildMap() {
     let topology;
     const dispatch = d3.dispatch("id");
 
-    // function brushended() {
-    //     console.log(container)
-    //     if (!d3.event.selection) {
+    // function brushended({selection}) {
+    //     if (!selection) {
     //         return;
     //     }
     //     const list = [];
-    //     container.datum().forEach((em) => {
-    //         list.push(em.employeeID)
+    //     selection.datum().forEach((em) => {
+    //         list.push(em.properties.employeeID)
     //     });
-    //     dispatch.call("id", this, list)
+        
+    //     dispatch.call("id", this, [...new Set(list)])
     // }
 
     // const brush = d3.brush()
@@ -30,7 +30,13 @@ export default function BuildMap() {
         .domain([1,50])
         .range(["rgba(0,0,0,0)","rgba(0,0,0,0.4)"])
 
-    function me(selection, trajectories = true) {
+
+    function opacityWRTrajectories(trajs, d) {
+        return trajs ? "rgba(0,0,0,0.2)" : opacityScale(d.properties.timeId)
+    }
+
+
+    function me(selection, trajectories=false) {
         container = selection;
         //topology and projection section
         const boundaries = container.node().parentNode.getBoundingClientRect();
@@ -42,13 +48,13 @@ export default function BuildMap() {
 
         const path = d3.geoPath().projection(projection);
         path.pointRadius(4);
-
-
+        
+        //features section
         if (container.classed("features")) {
 
             //grouping employees by ID to extract trajectories
             const feats = Array.from(d3.group(container.datum().features, d => d.properties.employeeID), 
-                ([, value]) => value.slice(trajectories ? -50 : 0).map( (rec,i) => ({
+                ([, value]) => value.slice(trajectories ? 0 : -50).map( (rec,i) => ({
                             ...rec,
                             properties : Object.assign(rec.properties, {timeId: i})
                         }))
@@ -64,7 +70,7 @@ export default function BuildMap() {
                 .data(finalFeats)
                 .join("path")
                 .attr("d", path)
-                .attr("fill", d => lastIDs.includes(d) ? "red" : opacityScale(d.properties.timeId))
+                .attr("fill", d => lastIDs.includes(d) ? "red" : opacityWRTrajectories(trajectories, d))
                 .on("mouseover", (event) => {
                     currId = event.target.__data__.properties.employeeID
                     container.selectAll("path")
@@ -75,12 +81,11 @@ export default function BuildMap() {
                 .on("mouseout", () => {
                     container.selectAll("path")
                         .filter(d => d.properties.employeeID == currId)
-                        .attr("fill", d =>  lastIDs.includes(d) ? "red" : opacityScale(d.properties.timeId))
+                        .attr("fill", d =>  lastIDs.includes(d) ? "red" : opacityWRTrajectories(trajectories, d))
                 })
                 .on("click", dispatcher)
                 
-            // container.append("g")
-            //     .call(brush)
+            //container.call(brush)
 
         } else {
             //map section

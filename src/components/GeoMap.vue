@@ -44,7 +44,7 @@ export default {
     },
     data() {
         return {
-            trajectories: true,
+            trajectories: false,
         }
     },
 
@@ -73,19 +73,15 @@ export default {
 
             d3.select(this.$refs.features).datum(features)
                 .call(map.on("id", d => {
-                    this.$emit('emitId', d);
-                    }
-                ))
+                        this.$emit('emitId', d);
+                        }
+                    ), this.trajectories)
 
         },
 
         trajectories : {
             handler() {
-                d3.select(this.$refs.features).datum({...this.featureCollection}).call(map.on("id", d => {
-                    this.$emit('emitId', d);
-                    }
-                ),
-                this.trajectories)
+                d3.select(this.$refs.features).datum({...this.featureCollection}).call(map,this.trajectories)
             }
         }
 
@@ -118,9 +114,13 @@ image {
 }
 
 .toggle-button {
-    position: relative;
+    position: absolute;
     width: 20%;
-    bottom: 700px;
-    left: 770px;
+    right: 180px;
+    top: 120px;
+}
+
+.form-check-input {
+    cursor: pointer;
 }
 </style>

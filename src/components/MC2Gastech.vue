@@ -239,7 +239,6 @@ export default {
 
         locationTarget: {
             handler() {
-                console.log()
                 this.setInfoChartData()
             }
         },
@@ -254,9 +253,7 @@ export default {
             deep:true
         },
         timeInterval: {
-            handler(newVal) {
-                console.log(newVal.value)
-                
+            handler() {
                 this.daySelection();
             },
             deep:true,
@@ -462,6 +459,11 @@ h4, h5 {
 .under-map {
     box-shadow: 0.3px 0.1px 0.3px 0.3px rgba(0,0,0,0.3);
     border-radius: 30px;
+    flex: flex-start;
+}
+
+.under-map:nth-child(2) {
+    margin: 0;
 }
 
 .form-range {

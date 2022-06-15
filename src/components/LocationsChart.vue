@@ -1,5 +1,5 @@
 <template>
-    <div :id="id" :data="popsAggr" :layout="layout" :options="options" :ref="clickTarget"/>
+    <div :id="id" :data="popsAggr" :layout="layout" :options="options" :ref="clickTarget"></div>
 </template>
 
 <script>
@@ -80,7 +80,9 @@ export default {
             
             colors[pn] = 'rgb(200,50,100)'
             this.data.marker.color = colors
-        }
+        },
+
+        clickTarget() {}
     }
 }
 </script>
