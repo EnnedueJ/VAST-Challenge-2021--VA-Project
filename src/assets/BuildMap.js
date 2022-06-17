@@ -47,44 +47,82 @@ export default function BuildMap() {
             )
 
         const path = d3.geoPath().projection(projection);
-        path.pointRadius(4);
+        //path.pointRadius(4);
         
         //features section
         if (container.classed("features")) {
 
             //grouping employees by ID to extract trajectories
             const feats = Array.from(d3.group(container.datum().features, d => d.properties.employeeID), 
-                ([, value]) => value.slice(trajectories ? 0 : -50).map( (rec,i) => ({
+                ([, value]) => value.slice(trajectories ? 0 : -40).map( (rec,i) => ({
                             ...rec,
                             properties : Object.assign(rec.properties, {timeId: i})
                         }))
                     )
 
-            const finalFeats = [].concat.apply([],feats);
+            //final features to draw
+            const feats1 = [].concat.apply([],feats)
+            //ids for employees actual position
+            const lastIDs = d3.groups(feats1, d => d.properties.employeeID).map(d => d[1].at(-1));
+            const finalFeats = trajectories ?
+                feats1 :
+                feats1.filter(d => lastIDs.includes(d) || feats1.at(-1).properties.time - d.properties.time < 60) //reducing trajectories on employee stop 
 
-            const lastIDs = d3.groups(finalFeats, d => d.properties.employeeID).map(d => d[1].at(-1));
-            
+
+            //preprocessing for drawing circles on employees proximity
+            const heads = finalFeats.filter(d => lastIDs.includes(d)).map(d => [d.geometry.coordinates[0], d.geometry.coordinates[1]])
+            const coords = []
+            for (const i in heads) {
+                for (const j in heads) {
+                    if (i != j ) {
+                        const a = heads[i]
+                        const b = heads[j]
+                        const diff = Math.abs(a[0]-b[0]) + Math.abs(a[1]-b[1])
+                        const centroid = ([(a[0]+b[0])/2, (a[1]+b[1])/2]).map(d => +d.toFixed(6))
+                        diff < Math.pow(8,-4) ? coords.push(centroid) : null
+                    }
+                }
+            }
+            const coords1 = new Set(coords.map(JSON.stringify));
+            const relCoords = Array.from(coords1).map(JSON.parse);
+
             let currId;
 
+            //draw circles for people proximity
+            drawCircles(relCoords, projection)
+
+            //gps paths
             container.selectAll("path")
                 .data(finalFeats)
                 .join("path")
-                .attr("d", path)
-                .attr("fill", d => lastIDs.includes(d) ? "red" : opacityWRTrajectories(trajectories, d))
+                .attr("d", path.pointRadius(4))
+                .attr("fill", d => lastIDs.includes(d) ? d.properties.employmentColor : opacityWRTrajectories(trajectories, d))
                 .on("mouseover", (event) => {
                     currId = event.target.__data__.properties.employeeID
                     container.selectAll("path")
                         .filter(d => d.properties.employeeID == currId)
                         .attr("fill", d =>  lastIDs.includes(d) ? "blue" : "yellow")
+                        .raise()
+                        .filter(d => lastIDs.includes(d))
+                        .attr("d",path.pointRadius(6))
                         
                 })
                 .on("mouseout", () => {
                     container.selectAll("path")
                         .filter(d => d.properties.employeeID == currId)
-                        .attr("fill", d =>  lastIDs.includes(d) ? "red" : opacityWRTrajectories(trajectories, d))
+                        .attr("fill", d =>  lastIDs.includes(d) ? d.properties.employmentColor : opacityWRTrajectories(trajectories, d))
+                        .filter(d => lastIDs.includes(d))
+                        .attr("d",path.pointRadius(5))
                 })
                 .on("click", dispatcher)
-                
+
+            //bringing heads on top of DOM inside the g-features section of svg
+            container.selectAll("path")
+                .filter(d => lastIDs.includes(d))
+                .attr("d",path.pointRadius(5))
+                .raise()
+        
+        
             //container.call(brush)
 
         } else {
@@ -109,8 +147,34 @@ export default function BuildMap() {
         return me;
     }
 
-    
+    const drawCircles = function (coords, projection) {
 
+        container.selectAll("circle")
+                .data(coords)
+                .join(
+                    (enter) => {
+                        return enter
+                            .append("circle")
+                            .attr("r",0)
+                            
+                    },
+                    (update) => update,
+                    (exit) => {
+                        return exit
+                            .transition()
+                            .duration(2000)
+                                .attr("r",0)
+                    }
+                )
+                .attr("cx",d => projection(d)[0])
+                .attr("cy", d => projection(d)[1])
+                .style("fill","rgba(255,153,153)")
+                .style("opacity","0.4")
+                .lower()
+                .transition()
+                    .duration(3000)
+                    .attr("r",30)
+    }
 
     return me;
 }

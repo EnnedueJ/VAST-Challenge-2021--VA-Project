@@ -47,8 +47,8 @@
                             type="range"
                             v-model="timeInterval.value"
                             min="0"
-                            max="52700"
-                            step="5"
+                            :max=timeInterval.max
+                            :step="5"
                             >
                         </b-form-input>
                     </b-col>
@@ -63,16 +63,17 @@
                 <h4>Employees</h4>
                 <b-list-group class="persons-list">
                     <b-list-group-item class="flex justify-content-between" 
-                         v-for="p in employees" 
-                         :key="p.id"
-                         :variant="p.selected ? 'warning' : ''">
+                        v-for="p in employees" 
+                        :key="p.id"
+                        :variant="p.selected ? 'warning' : ''"
+                        :style="{'border-left':'3px solid '+ employmentColors[p.id]}">
                         {{p.name}}
-                        <b-badge variant="light" pill 
-                            style="margin-left:20px; padding-left: 15px;">
-                            {{p.id != 0 ? p.id : "f"}}
+                        <b-badge variant="light" pill
+                            style="margin-left:20px; padding-left:15px;">
+                            {{p.id}}
                         </b-badge>
                         <br/>
-                        <small style="font-style: italic;">{{p.employment}}</small>
+                        <small style="font-style: italic;">{{p.employmentTitle}}</small>
                     </b-list-group-item>
                 </b-list-group>
             </b-col>
@@ -120,6 +121,7 @@ export default {
     data() {
         return {
             employees: [],
+            employmentColors: {},
             pointCollection: {
                 type: 'FeatureCollection',
                 features: [
@@ -162,6 +164,7 @@ export default {
             },
             timeInterval: {
                 value:0,
+                max:52000
             }
         }
     },
@@ -199,16 +202,27 @@ export default {
         //car dataset loading in order to populate Employees list
         d3.csv("/data/car-assignments.csv")
             .then((res) => {
+                const uniqueEmpTypes = [...new Set(res.map((d) => d.CurrentEmploymentType))]
+
+                const colorScale = d3.scaleOrdinal()
+                    .domain(uniqueEmpTypes)
+                    .range(d3.schemeCategory10)
+
                 const employees = res.map((d) => {
+
                     return {
                         name : d.FirstName + " " + d.LastName,
                         id : +d.CarID,
-                        employment : d.CurrentEmploymentTitle
+                        employmentTitle : d.CurrentEmploymentTitle,
+                        employmentType : d.CurrentEmploymentType,
                     }
 
                 })
-
+                
                 this.employees = employees
+                this.employees.forEach((row) => {
+                    this.employmentColors[row.id] = colorScale(row.employmentType)
+                    })
             })
 
         d3.csv("/data/gps.csv")
@@ -276,8 +290,9 @@ export default {
                         properties: {
                             employeeID: +row.employee,
                             time: id,
-                            dateTime: row.time 
-                        },
+                            dateTime: row.time,
+                            employmentColor: this.employmentColors[+row.employee],
+                            },
                         geometry: {
                             type: 'Point',
                             coordinates: [+row.x, +row.y]
@@ -286,7 +301,6 @@ export default {
                     
                 }).filter(d => (d.properties.time <= this.timeInterval.value))
             }
-
             return fc;
         },
 
@@ -357,7 +371,7 @@ export default {
             }));
         
             const finalPaths = paths.sort((x,y) => d3.ascending(x.time, y.time));
-            this.timeInterval.max = String(finalPaths.length)
+            this.timeInterval.max = finalPaths.length
             this.pointCollection = this.listToGeoJson(finalPaths);
 
         }
@@ -386,13 +400,13 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-top:5px;
+    margin-bottom: 0;
 }
 
 h4, h5 {
     border-bottom: 0.5px solid #00000017;
 }
-
-
 
 .col {
     display: flex;
@@ -408,6 +422,7 @@ h4, h5 {
 
 .map {
     align-items: left;
+    position:relative;
 }
 
 .btn-group {

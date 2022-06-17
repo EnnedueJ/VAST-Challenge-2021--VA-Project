@@ -115,9 +115,9 @@ image {
 
 .toggle-button {
     position: absolute;
-    width: 20%;
-    right: 180px;
-    top: 120px;
+    width: fit-content;
+    top: 50px;
+    right: 40px;
 }
 
 .form-check-input {
