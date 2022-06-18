@@ -19,7 +19,7 @@ export default {
     data() {
         return {
             data : {
-                type: (this.id == "plot-2" || this.id == "plot-4") ? "line" : "histogram",
+                type: this.id == "plot-2" ? "line" : "histogram",
                 histfunc: "sum",
                 xbins: {
                     start: 2.1,
@@ -38,7 +38,7 @@ export default {
                 height: 250,
                 width:400,
                 margin: {
-                    t:40,
+                    t:10,
                     b:35,
                     r:10,
                     l:40
@@ -47,6 +47,9 @@ export default {
                     family: "Trebuchet MS, sans-serif"
                 },
                 xaxis: this.xaxis,
+                yaxis: {
+                    title: "Visits"
+                },
                 bargap: 0.04, 
                 
             },

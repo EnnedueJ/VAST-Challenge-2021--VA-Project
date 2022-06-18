@@ -14,10 +14,8 @@ export default function BuildMap() {
     //     selection.datum().forEach((em) => {
     //         list.push(em.properties.employeeID)
     //     });
-        
     //     dispatch.call("id", this, [...new Set(list)])
     // }
-
     // const brush = d3.brush()
     //     .on("end", brushended)
 
@@ -32,7 +30,7 @@ export default function BuildMap() {
 
 
     function opacityWRTrajectories(trajs, d) {
-        return trajs ? "rgba(0,0,0,0.2)" : opacityScale(d.properties.timeId)
+        return trajs ? "rgba(0,0,0,0.1)" : opacityScale(d.properties.timeId)
     }
 
 
@@ -67,7 +65,7 @@ export default function BuildMap() {
             //final features to draw
             const finalFeats = trajectories ?
                 feats1 :
-                feats1.filter(d => lastIDs.includes(d) || feats1.at(-1).properties.time - d.properties.time < 60) //reducing trajectories on employee stop 
+                feats1.filter(d => lastIDs.includes(d) || feats1.at(-1).properties.time - d.properties.time < 40) //reducing trajectories on employee stop 
 
 
             //preprocessing for drawing circles on employees proximity
@@ -96,14 +94,13 @@ export default function BuildMap() {
             container.selectAll("path")
                 .data(finalFeats)
                 .join("path")
-                .attr("d", path.pointRadius(4))
+                .attr("d", path.pointRadius(3))
                 .attr("fill", d => lastIDs.includes(d) ? d.properties.employmentColor : opacityWRTrajectories(trajectories, d))
                 .on("mouseover", (event) => {
                     currId = event.target.__data__.properties.employeeID
                     container.selectAll("path")
                         .filter(d => d.properties.employeeID == currId)
                         .attr("fill", d =>  lastIDs.includes(d) ? "blue" : "yellow")
-                        .raise()
                         .filter(d => lastIDs.includes(d))
                         .attr("d",path.pointRadius(6))
                         
@@ -157,7 +154,6 @@ export default function BuildMap() {
                         return enter
                             .append("circle")
                             .attr("r",0)
-                            
                     },
                     (update) => update,
                     (exit) => {

@@ -18,7 +18,7 @@ export default {
                 type: "bar",
                 orientation: 'h',
                 marker: {
-                    color: 'rgb(158,202,225)',
+                    color: "rgb(255, 204, 153)",
                 },
             },
             layout: {
@@ -77,7 +77,7 @@ export default {
         },
 
         changeColor(data, tar=null) {
-            let colors = Array(data.length).fill('rgb(158,202,225)');
+            let colors = Array(data.length).fill("rgb(255, 204, 153)");
             if (tar) {
                 const pn = data.indexOf(tar)
                 colors[pn] = 'rgb(200,50,100)'

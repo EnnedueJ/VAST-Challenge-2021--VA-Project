@@ -7,7 +7,7 @@
         <b-row>
             <b-col class="loc-plot">
                 <b-row id="titles">
-                    <h4>Location popularity</h4>
+                    <h4>Locations popularity</h4>
                     <h6><i>Click on a location to inspect. Double click to reset.</i></h6>
                 </b-row>
                 <b-row>
@@ -80,13 +80,17 @@
             
         </b-row>
         <b-row class="row-info-charts">
-            <h5><b>{{locationTarget}}</b></h5>
-            <b-col class="col-info-charts">
-                <InfoChart :id="'plot-2'" :popsAggr="datesData" :xaxis="xaxis1" :title="'Days'"/>
-                <InfoChart :id="'plot-3'" :popsAggr="timeData" :xaxis="xaxis2" :title="'Times'"/>
+            <h4><b>{{locationTarget}}</b></h4>
+            <b-col class="col-info-charts1">
+                <h5 class="info-titles" style="writing-mode:vertical-rl;"><b>Visits</b></h5>
+                <InfoChart id='plot-2' :popsAggr="locationsByDate" :xaxis="xaxis1"/>
+                <InfoChart id='plot-3' :popsAggr="locationsByTime" :xaxis="xaxis2"/>
             </b-col>
-            <b-col>
-                
+            <b-col class="col-info-charts2">
+                <h5 class="info-titles" style="writing-mode:vertical-rl;"><b>Money Spent</b></h5>
+                <div class="w"></div>
+                <InfoChart id='plot-4' :popsAggr="priceByDate" :xaxis="xaxis1"/>
+                <InfoChart id='plot-5' :popsAggr="priceByTime" :xaxis="xaxis2"/>
             </b-col>
             <b-col></b-col>
         </b-row>
@@ -101,6 +105,7 @@ const d3 = require("d3");
 import GeoMap from "./GeoMap.vue";
 import LocationsChart from "./LocationsChart.vue"
 import InfoChart from "./InfoChart.vue"
+//import InfoChartTrans from "./InfoChartTrans.vue"
 
 let cardsCf;
 let gpsCf;
@@ -115,7 +120,8 @@ export default {
     components: {
     GeoMap,
     LocationsChart,
-    InfoChart
+    InfoChart,
+    //InfoChartTrans
     },
 
     data() {
@@ -139,8 +145,10 @@ export default {
             },
             cardsData: [],
             dataLocations: [],
-            datesData: [],
-            timeData: [],
+            locationsByDate: [],
+            locationsByTime: [],
+            priceByDate: [],
+            priceByTime: [],
             cardType: {
                 value: "Total",
                 options: ["Total","Credit Card","Loyalty Card"]
@@ -330,7 +338,6 @@ export default {
 
         employeeSelection(ids) {
             
-            console.log(ids);
             this.employees = this.employees.map((em) => {
                 if (ids.includes(em.id)) {
                     return {
@@ -338,7 +345,6 @@ export default {
                         selected: true,
                     }
                 }
-
                 return {
                     ...em,
                     selected: false,
@@ -354,10 +360,10 @@ export default {
                 
             }
             
-            this.datesData = dateDim.group().reduceCount().all();
-            this.timeData = timeDim.group().all().filter(d => d.key != null);
-            console.log(this.locationTarget)
-            
+            this.priceByDate = dateDim.group().reduceSum(function(d) { return d.price; }).all();
+            this.priceByTime = timeDim.group().reduceSum(function(d) { return d.price; }).all();
+            this.locationsByDate = dateDim.group().reduceCount().all();
+            this.locationsByTime = timeDim.group().all().filter(d => d.key != null);
         },
 
         daySelection() {
@@ -376,9 +382,7 @@ export default {
             this.pointCollection = this.listToGeoJson(finalPaths);
 
         }
-
     }
-
 }
 
 </script>
@@ -432,12 +436,29 @@ h4, h5 {
     
 }
 
-.col-info-charts {
+.col-info-charts1 {
+    height: 260px;
     flex-direction: row;
+    box-shadow: inset 3px -2px 2px -1px #8b7e7e97;
+    border-radius: 10px;
+}
+
+.col-info-charts2 {
+    height: 260px;
+    flex-direction: row;
+    box-shadow: inset 3px -2px 2px -1px #8b7e7e97;
+    border-radius: 10px;
+}
+
+.info-titles {
+    margin: 0;
+    padding-right: 3px;
+    padding-top: 15px;
+    writing-mode:vertical-lr;
 }
 
 .row-info-charts {
-    padding: 20px;
+    padding: 2px;
     padding-top: 5px;
 }
 
