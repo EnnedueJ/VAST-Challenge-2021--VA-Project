@@ -60,10 +60,11 @@ export default function BuildMap() {
                         }))
                     )
 
-            //final features to draw
+            //features to draw
             const feats1 = [].concat.apply([],feats)
             //ids for employees actual position
             const lastIDs = d3.groups(feats1, d => d.properties.employeeID).map(d => d[1].at(-1));
+            //final features to draw
             const finalFeats = trajectories ?
                 feats1 :
                 feats1.filter(d => lastIDs.includes(d) || feats1.at(-1).properties.time - d.properties.time < 60) //reducing trajectories on employee stop 
@@ -162,7 +163,7 @@ export default function BuildMap() {
                     (exit) => {
                         return exit
                             .transition()
-                            .duration(2000)
+                            .duration(1500)
                                 .attr("r",0)
                     }
                 )
@@ -172,7 +173,7 @@ export default function BuildMap() {
                 .style("opacity","0.4")
                 .lower()
                 .transition()
-                    .duration(3000)
+                    .duration(1000)
                     .attr("r",30)
     }
 

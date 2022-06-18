@@ -117,7 +117,7 @@ image {
     position: absolute;
     width: fit-content;
     top: 50px;
-    right: 40px;
+    right: 30px;
 }
 
 .form-check-input {

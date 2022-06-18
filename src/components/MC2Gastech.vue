@@ -8,7 +8,7 @@
             <b-col class="loc-plot">
                 <b-row id="titles">
                     <h4>Location popularity</h4>
-                    <h6><i>Click on a location to inspect.</i></h6>
+                    <h6><i>Click on a location to inspect. Double click to reset.</i></h6>
                 </b-row>
                 <b-row>
                     <b-form-checkbox-group button-variant="outline-secondary"
@@ -348,14 +348,15 @@ export default {
         },
 
         setInfoChartData() {
+            locDim ? locDim.filterAll() : null
             if (this.locationTarget != "Total") {
-                locDim ? locDim.filterAll() : null
                 locDim.filter(d => d == this.locationTarget)
                 
             }
             
             this.datesData = dateDim.group().reduceCount().all();
             this.timeData = timeDim.group().all().filter(d => d.key != null);
+            console.log(this.locationTarget)
             
         },
 

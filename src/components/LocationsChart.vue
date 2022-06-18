@@ -49,15 +49,17 @@ export default {
         Plotly.newPlot(this.plot, [this.data], this.layout, this.options)
 
         this.plot.on("plotly_click",(d) => {
-                    this.getPlotClick(d)
-                })
+                this.getPlotClick(d)
+            })
+
+        this.plot.on("plotly_doubleclick", this.getPlotDoubleClick)
 
     },
     watch: {
         popsAggr(datum) {
             this.data.y = datum.map(d => d.key);
             this.data.x = datum.map(d => d.value);
-            this.changeColor(this.tarPoint, this.data.y)
+            this.changeColor(this.data.y, this.tarPoint)
             Plotly.react(this.plot, [this.data], this.layout, this.options)
             
         },
@@ -68,18 +70,27 @@ export default {
             this.$emit('targetChange', this.tarPoint)
             
             const fullData = d.points[0].data.y
-            this.changeColor(this.tarPoint, fullData)
+            this.changeColor(fullData, this.tarPoint)
 
             Plotly.react(this.plot, [this.data], this.layout, this.options);
             
         },
 
-        changeColor(tar, data) {
-            const pn = data.indexOf(tar)
+        changeColor(data, tar=null) {
             let colors = Array(data.length).fill('rgb(158,202,225)');
+            if (tar) {
+                const pn = data.indexOf(tar)
+                colors[pn] = 'rgb(200,50,100)'
+            }
             
-            colors[pn] = 'rgb(200,50,100)'
             this.data.marker.color = colors
+        },
+
+        getPlotDoubleClick() {
+            this.tarPoint = null
+            this.$emit('targetChange', "Total");
+            this.changeColor(this.data.y);
+            Plotly.react(this.plot, [this.data], this.layout, this.options);
         },
 
         clickTarget() {}

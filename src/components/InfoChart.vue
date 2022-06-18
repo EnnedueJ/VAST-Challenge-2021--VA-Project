@@ -23,8 +23,8 @@ export default {
                 type: this.id == "plot-2" ? "line" : "histogram",
                 histfunc: "sum",
                 xbins: {
-                    start: 2.,
-                    size: 1.1,
+                    start: 2.1,
+                    size: 1.,
                     end: 23.
                 },
                 line: {
