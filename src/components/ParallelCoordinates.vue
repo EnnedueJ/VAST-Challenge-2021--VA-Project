@@ -48,7 +48,6 @@ export default {
     },
     watch: {
         popsAggr(datum) {
-            console.log(datum)
             this.finalData = datum.map(row => {
                 return {
                     ...row,

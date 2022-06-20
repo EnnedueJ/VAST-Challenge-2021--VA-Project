@@ -348,6 +348,7 @@ export default {
         },
 
         employeeSelection(ids) {
+            console.log(ids)
             
             this.employees = this.employees.map((em) => {
                 if (ids.includes(em.id)) {
@@ -360,7 +361,7 @@ export default {
                     ...em,
                     selected: false,
                 }
-            }).sort((a,b) => (Number(a.id) || 36) - (Number(b.id) || 36))
+            }).sort((a,b) => a.id - b.id)
             .sort((a,b) => b.selected - a.selected);
         },
 

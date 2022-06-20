@@ -20,8 +20,8 @@ export default function BuildMap() {
     //     .on("end", brushended)
 
     function dispatcher(event) {
-        const id = event.target.__data__.properties.employeeID;
-        dispatch.call("id", this, [id]);
+        const ids = event.target.__data__.properties ? [event.target.__data__.properties.employeeID] : event.target.__data__.ids.map(Number)
+        dispatch.call("id", this, ids);
     }
     
     const opacityScale = d3.scaleLinear()
@@ -65,30 +65,14 @@ export default function BuildMap() {
             //final features to draw
             const finalFeats = trajectories ?
                 feats1 :
-                feats1.filter(d => lastIDs.includes(d) || feats1.at(-1).properties.time - d.properties.time < 40) //reducing trajectories on employee stop 
-
-
-            //preprocessing for drawing circles on employees proximity
-            const heads = finalFeats.filter(d => lastIDs.includes(d)).map(d => [d.geometry.coordinates[0], d.geometry.coordinates[1]])
-            const coords = []
-            for (const i in heads) {
-                for (const j in heads) {
-                    if (i != j ) {
-                        const a = heads[i]
-                        const b = heads[j]
-                        const diff = Math.abs(a[0]-b[0]) + Math.abs(a[1]-b[1])
-                        const centroid = ([(a[0]+b[0])/2, (a[1]+b[1])/2]).map(d => +d.toFixed(6))
-                        diff < Math.pow(8,-4) ? coords.push(centroid) : null
-                    }
-                }
-            }
-            const coords1 = new Set(coords.map(JSON.stringify));
-            const relCoords = Array.from(coords1).map(JSON.parse);
+                feats1.filter(d => lastIDs.includes(d) || feats1.at(-1).properties.time - d.properties.time < 70) //reducing trajectories on employee stop 
 
             let currId;
 
-            //draw circles for people proximity
-            drawCircles(relCoords, projection)
+            //preprocessing for drawing circles on employees proximity
+            const heads = finalFeats.filter(d => lastIDs.includes(d)).map(d => [d.properties.employeeID, d.geometry.coordinates[0], d.geometry.coordinates[1]])
+            const finalCircles = computeCircles(heads)
+            drawCircles(finalCircles, projection)
 
             //gps paths
             container.selectAll("path")
@@ -163,14 +147,58 @@ export default function BuildMap() {
                                 .attr("r",0)
                     }
                 )
-                .attr("cx",d => projection(d)[0])
-                .attr("cy", d => projection(d)[1])
+                .attr("cx",d => projection(d.coordinates)[0])
+                .attr("cy", d => projection(d.coordinates)[1])
                 .style("fill","rgba(255,153,153)")
                 .style("opacity","0.4")
+                .style("cursor","pointer")
+                .on("click", dispatcher)
                 .lower()
                 .transition()
                     .duration(1000)
                     .attr("r",30)
+
+    }
+
+    const computeCircles = function(heads) {
+        const trycoords = {}
+        for (const i in heads) {
+            for (const j in heads) {
+                if (i != j ) {
+                    const a = heads[i];
+                    const b = heads[j];
+                    const diff = Math.abs(a[1]-b[1]) + Math.abs(a[2]-b[2]);
+                    const centroid = ([(a[1]+b[1])/2, (a[2]+b[2])/2]).map(d => +d.toFixed(6));
+                    const keey = String(a[0]) + "_" + String(b[0])
+                    diff < Math.pow(8,-4) ? trycoords[keey] = String(centroid.map(d => +d.toFixed(4))) : null;
+                }
+            }
+        }
+
+        const circles = {}
+        for (const [key, value] of Object.entries(trycoords)) {
+            if (!circles[value]) {
+                circles[value] = [key]
+            } else {
+                circles[value].push(key)
+            }
+        }
+
+        const finalCircles = [] 
+        for (const [key, value] of Object.entries(circles)) {
+            const ids = value.reduce((p,c,idx) => {
+                return idx == 0 ? c : p + "_" + c
+            })
+            .split("_")
+            .flat()
+            .filter((value, i, self) => self.indexOf(value) === i )
+
+            const newCoords = key.split(",").map(parseFloat)
+
+            finalCircles.push(Object.assign({ids: ids, coordinates: newCoords}))
+        }
+
+        return finalCircles
     }
 
     return me;
