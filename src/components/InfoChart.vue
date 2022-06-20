@@ -35,8 +35,8 @@ export default {
                 fill: 'tonexty',
             },
             layout: {
-                height: 250,
-                width:400,
+                height: 300,
+                width:350,
                 margin: {
                     t:40,
                     b:35,

@@ -80,19 +80,24 @@
             
         </b-row>
         <b-row class="row-info-charts">
-            <h4><b>{{locationTarget}}</b></h4>
-            <b-col class="col-info-charts1">
-                <h5 class="info-titles" style="writing-mode:vertical-rl;"><b>Visits</b></h5>
-                <InfoChart id='plot-2' :popsAggr="locationsByDate" :xaxis="xaxis1"/>
-                <InfoChart id='plot-3' :popsAggr="locationsByTime" :xaxis="xaxis2"/>
+            <h4><b>Location: </b><i>{{locationTarget}}</i> - <b>Card type: </b><i>{{cardType.value}}</i></h4>
+            <b-col class="col-info-charts">
+                <b-col class="inner-infocharts">
+                    <h5 class="info-titles"><b>Visits</b></h5>
+                    <InfoChart id='plot-2' :popsAggr="locationsByDate" :xaxis="xaxis1"/>
+                    <InfoChart id='plot-3' :popsAggr="locationsByTime" :xaxis="xaxis2"/>
+                </b-col>
+                <b-col class="parcoords">
+                    <h5 class="info-titles"><b>Transactions of the day</b></h5>
+                    <i>{{new Date(selectedDay.value).toDateString()}}</i>
+                    <ParallelCoordinates id='plot-6' :popsAggr="featuresOTD"/>
+                </b-col>
+                <b-col class="inner-infocharts">
+                    <h5 class="info-titles"><b>Money Spent</b></h5>
+                    <InfoChart id='plot-4' :popsAggr="priceByDate" :xaxis="xaxis1"/>
+                    <InfoChart id='plot-5' :popsAggr="priceByTime" :xaxis="xaxis2"/>
+                </b-col>
             </b-col>
-            <b-col class="col-info-charts2">
-                <h5 class="info-titles" style="writing-mode:vertical-rl;"><b>Money Spent</b></h5>
-                <div class="w"></div>
-                <InfoChart id='plot-4' :popsAggr="priceByDate" :xaxis="xaxis1"/>
-                <InfoChart id='plot-5' :popsAggr="priceByTime" :xaxis="xaxis2"/>
-            </b-col>
-            <b-col></b-col>
         </b-row>
     </b-container>
     
@@ -105,7 +110,7 @@ const d3 = require("d3");
 import GeoMap from "./GeoMap.vue";
 import LocationsChart from "./LocationsChart.vue"
 import InfoChart from "./InfoChart.vue"
-//import InfoChartTrans from "./InfoChartTrans.vue"
+import ParallelCoordinates from "./ParallelCoordinates.vue"
 
 let cardsCf;
 let gpsCf;
@@ -121,7 +126,7 @@ export default {
     GeoMap,
     LocationsChart,
     InfoChart,
-    //InfoChartTrans
+    ParallelCoordinates
     },
 
     data() {
@@ -149,6 +154,7 @@ export default {
             locationsByTime: [],
             priceByDate: [],
             priceByTime: [],
+            featuresOTD: [],
             cardType: {
                 value: "Total",
                 options: ["Total","Credit Card","Loyalty Card"]
@@ -191,7 +197,7 @@ export default {
                     location: d.location,
                     price: +d.price,
                     ccnum: d.last4ccnum ? +d.last4ccnum : null,
-                    loyaltynum: d.loyaltynum ? +d.loyaltynum : null
+                    loyaltynum: d.loyaltynum ? d.loyaltynum : null
                 }
             })
 
@@ -309,6 +315,11 @@ export default {
                     
                 }).filter(d => (d.properties.time <= this.timeInterval.value))
             }
+
+            this.featuresOTD = dateDim.filter(d => d.getDate() == new Date(this.selectedDay.value).getDate())
+                    .top(Infinity)
+            dateDim.filterAll()
+
             return fc;
         },
 
@@ -359,11 +370,14 @@ export default {
                 locDim.filter(d => d == this.locationTarget)
                 
             }
-            
             this.priceByDate = dateDim.group().reduceSum(function(d) { return d.price; }).all();
             this.priceByTime = timeDim.group().reduceSum(function(d) { return d.price; }).all();
             this.locationsByDate = dateDim.group().reduceCount().all();
             this.locationsByTime = timeDim.group().all().filter(d => d.key != null);
+
+            this.featuresOTD = dateDim.filter(d => d.getDate() == new Date(this.selectedDay.value).getDate())
+                    .top(Infinity)
+            dateDim.filterAll()
         },
 
         daySelection() {
@@ -380,7 +394,12 @@ export default {
             const finalPaths = paths.sort((x,y) => d3.ascending(x.time, y.time));
             this.timeInterval.max = finalPaths.length
             this.pointCollection = this.listToGeoJson(finalPaths);
-
+        },
+        
+        selectionOTD() {
+            this.featuresOTD = dateDim.filter(d => d.getDate() == new Date(this.selectedDay.value).getDate())
+                    .top(Infinity)
+            dateDim.filterAll()
         }
     }
 }
@@ -436,31 +455,39 @@ h4, h5 {
     
 }
 
-.col-info-charts1 {
-    height: 260px;
-    flex-direction: row;
-    box-shadow: inset 3px -2px 2px -1px #8b7e7e97;
-    border-radius: 10px;
-}
-
-.col-info-charts2 {
-    height: 260px;
-    flex-direction: row;
-    box-shadow: inset 3px -2px 2px -1px #8b7e7e97;
-    border-radius: 10px;
-}
-
-.info-titles {
-    margin: 0;
-    padding-right: 3px;
-    padding-top: 15px;
-    writing-mode:vertical-lr;
-}
-
 .row-info-charts {
     padding: 2px;
     padding-top: 5px;
 }
+
+.row-info-charts h4 {
+    text-align: center;
+}
+
+.info-titles {
+    height: 20px;
+    padding: 5px;
+    border: 0;
+}
+
+.col-info-charts {
+    height: 650px;
+    flex-direction: row;
+}
+
+.inner-infocharts {
+    align-items: center;
+    box-shadow: inset 2px -2px 2px -1px #8b7e7e97;
+    border-radius: 10px;
+}
+.parcoords {
+    height: 900px;
+    padding: 10px;
+    box-shadow: inset 2px -2px 2px -1px #8b7e7e97;
+    border-radius: 10px;
+    align-items: center;
+}
+
 
 .persons-list {
     width: 300px;
