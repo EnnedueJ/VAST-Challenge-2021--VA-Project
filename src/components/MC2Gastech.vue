@@ -88,8 +88,7 @@
                     <InfoChart id='plot-3' :popsAggr="locationsByTime" :xaxis="xaxis2"/>
                 </b-col>
                 <b-col class="parcoords">
-                    <h5 class="info-titles"><b>Transactions of the day</b></h5>
-                    <i>{{new Date(selectedDay.value).toDateString()}}</i>
+                    <h5 class="info-titles"><b>Transactions</b></h5>
                     <ParallelCoordinates id='plot-6' :popsAggr="featuresOTD"/>
                 </b-col>
                 <b-col class="inner-infocharts">
@@ -316,9 +315,6 @@ export default {
                 }).filter(d => (d.properties.time <= this.timeInterval.value))
             }
 
-            this.featuresOTD = dateDim.filter(d => d.getDate() == new Date(this.selectedDay.value).getDate())
-                    .top(Infinity)
-            dateDim.filterAll()
 
             return fc;
         },
@@ -376,9 +372,7 @@ export default {
             this.locationsByDate = dateDim.group().reduceCount().all();
             this.locationsByTime = timeDim.group().all().filter(d => d.key != null);
 
-            this.featuresOTD = dateDim.filter(d => d.getDate() == new Date(this.selectedDay.value).getDate())
-                    .top(Infinity)
-            dateDim.filterAll()
+            this.selectionOTD()
         },
 
         daySelection() {
@@ -398,9 +392,10 @@ export default {
         },
         
         selectionOTD() {
-            this.featuresOTD = dateDim.filter(d => d.getDate() == new Date(this.selectedDay.value).getDate())
-                    .top(Infinity)
-            dateDim.filterAll()
+            this.featuresOTD = dateDim.top(Infinity)
+            // this.featuresOTD = dateDim.filter(d => d.getDate() == new Date(this.selectedDay.value).getDate())
+            //         .top(Infinity)
+            // dateDim.filterAll()
         }
     }
 }
@@ -477,13 +472,15 @@ h4, h5 {
 }
 
 .inner-infocharts {
+    width: 15%;
     align-items: center;
     box-shadow: inset 2px -2px 2px -1px #8b7e7e97;
     border-radius: 10px;
 }
 .parcoords {
+    width:60%;
     height: 900px;
-    padding: 10px;
+    padding-left: 10px;
     box-shadow: inset 2px -2px 2px -1px #8b7e7e97;
     border-radius: 10px;
     align-items: center;

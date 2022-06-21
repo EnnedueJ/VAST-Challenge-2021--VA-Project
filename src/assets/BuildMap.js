@@ -6,19 +6,6 @@ export default function BuildMap() {
     let topology;
     const dispatch = d3.dispatch("id");
 
-    // function brushended({selection}) {
-    //     if (!selection) {
-    //         return;
-    //     }
-    //     const list = [];
-    //     selection.datum().forEach((em) => {
-    //         list.push(em.properties.employeeID)
-    //     });
-    //     dispatch.call("id", this, [...new Set(list)])
-    // }
-    // const brush = d3.brush()
-    //     .on("end", brushended)
-
     function dispatcher(event) {
         const ids = event.target.__data__.properties ? [event.target.__data__.properties.employeeID] : event.target.__data__.ids.map(Number)
         dispatch.call("id", this, ids);
@@ -33,7 +20,6 @@ export default function BuildMap() {
         return trajs ? "rgba(0,0,0,0.1)" : opacityScale(d.properties.timeId)
     }
 
-
     function me(selection, trajectories=false) {
         container = selection;
         //topology and projection section
@@ -45,7 +31,6 @@ export default function BuildMap() {
             )
 
         const path = d3.geoPath().projection(projection);
-        //path.pointRadius(4);
         
         //features section
         if (container.classed("features")) {
@@ -150,8 +135,23 @@ export default function BuildMap() {
                 .attr("cx",d => projection(d.coordinates)[0])
                 .attr("cy", d => projection(d.coordinates)[1])
                 .style("fill","rgba(255,153,153)")
-                .style("opacity","0.4")
+                .style("opacity","0.6")
                 .style("cursor","pointer")
+                .attr("stroke","black")
+                .attr("stroke-width",0)
+                .on("mouseover", (e,d) => {
+                    d3.select(e.target)
+                        .transition()
+                        .duration(300)
+                        .attr("stroke-width",2)
+                        .raise()
+                })
+                .on("mouseout", (e,d) => {
+                    d3.select(e.target)
+                        .transition()
+                        .duration(300)
+                        .attr("stroke-width",0)
+                })
                 .on("click", dispatcher)
                 .lower()
                 .transition()

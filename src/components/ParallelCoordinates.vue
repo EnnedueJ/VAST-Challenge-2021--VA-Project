@@ -26,11 +26,17 @@ export default {
                 },
                 labelfont: {
                     size: 18,
+                },
+                rangefont: {
+                    size: 15
+                },
+                tickfont: {
+                    size: 12
                 }
             },
             layout: {
                 width:900,
-                height: 800,
+                height: 900,
                 font: {
                     family: "Trebuchet MS, sans-serif"
                 },
@@ -55,11 +61,13 @@ export default {
                 }
             })
 
-            const cards = this.unpack(this.finalData, 'card').sort()
+            const cards = this.unpack(this.finalData, 'card')
+            const dates = this.unpack(this.finalData, 'date').map(d => d.getDate()+"th")
             const times = this.unpack(this.finalData, 'time')
             const locations = this.unpack(this.finalData, 'location')
             const prices = this.unpack(this.finalData, 'price')
             const setCards = [...new Set(cards)]
+            const setDates = [...new Set(dates)]
             const setLocations = [...new Set(locations)]
 
             this.data.dimensions = [{
@@ -69,10 +77,16 @@ export default {
                     ticktext: setCards,
                     tickvals: d3.range(setCards.length),
                 }, {
+                    label: "date",
+                    values: dates.map(d => setDates.indexOf(d)),
+                    range: [0,setDates.length],
+                    ticktext: setDates,
+                    tickvals: d3.range(setDates.length)
+                }, {
                     label: "time",
                     values: times,
                     range: [0,Math.max(...times)],
-                }, {
+                },{
                     label: "location",
                     values: locations.map(l => setLocations.indexOf(l)),
                     range: [0,setLocations.length],
