@@ -139,14 +139,14 @@ export default function BuildMap() {
                 .style("cursor","pointer")
                 .attr("stroke","black")
                 .attr("stroke-width",0)
-                .on("mouseover", (e,d) => {
+                .on("mouseover", (e,) => {
                     d3.select(e.target)
                         .transition()
                         .duration(300)
                         .attr("stroke-width",2)
                         .raise()
                 })
-                .on("mouseout", (e,d) => {
+                .on("mouseout", (e,) => {
                     d3.select(e.target)
                         .transition()
                         .duration(300)
