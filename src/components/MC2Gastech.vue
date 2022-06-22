@@ -478,9 +478,10 @@ h4, h5 {
     border-radius: 10px;
 }
 .parcoords {
-    width:60%;
+    width:70%;
     height: 900px;
     padding-left: 10px;
+    padding-right: 10px;
     box-shadow: inset 2px -2px 2px -1px #8b7e7e97;
     border-radius: 10px;
     align-items: center;

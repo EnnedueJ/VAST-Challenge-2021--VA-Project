@@ -22,7 +22,10 @@ export default {
             data : {
                 type: "parcoords",
                 line: {
-                    color: 'rgb(200,50,100)',
+                    showscale: true,
+                    reversescale: true,
+                    colorscale: "Jet",
+                    color: 2500
                 },
                 labelfont: {
                     size: 18,
@@ -32,7 +35,7 @@ export default {
                 },
                 tickfont: {
                     size: 12
-                }
+                },
             },
             layout: {
                 width:900,
@@ -98,6 +101,8 @@ export default {
                     range: [0,Math.max(...prices)]
                 }
             ]
+
+            this.data.line.color = this.unpack(this.finalData, 'price').map(Number)
 
             Plotly.react(this.plot, [this.data], this.layout, this.options)
             
